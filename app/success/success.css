@@ -1,0 +1,54 @@
+.success-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+  }
+  
+  .success-card {
+    border-radius: 10px;
+    padding: 30px;
+    text-align: center;
+    box-shadow: 0 4px 8px rgba(252, 251, 251, 0.1);
+    max-width: 400px;
+    width: 100%;
+  }
+  
+  .icon {
+    background-color: #4CAF50;
+    border-radius: 50%;
+    display: inline-block;
+    padding: 15px;
+    margin-bottom: 20px;
+  }
+  
+  .icon svg {
+    color: white;
+  }
+  
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    font-size: 1rem;
+    margin-bottom: 20px;
+  }
+  
+  .go-home-btn {
+    background-color: #0a3fd1;
+    color: white;
+    font-size: 1rem;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background-color 0.3s;
+  }
+  
+  .go-home-btn:hover {
+    background-color: #0a1172;
+  }
+  

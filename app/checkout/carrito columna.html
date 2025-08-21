@@ -1,0 +1,760 @@
+{/* Columna derecha: Resumen del pedido */}
+                    <div className="bg-gray-50 p-6 rounded-lg">
+                        <h2 className="text-lg font-bold mb-4">Resumen del pedido</h2>
+                        {carrito.map((item) => (
+                            <div key={item.id} className="flex items-center space-x-4 mb-4">
+                                <div className="w-16 h-16 relative">
+                                    <Image
+                                        src={item.producto?.imagen || ''}
+                                        alt={item.producto?.nombre || ''}
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="rounded-lg"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-md font-semibold">{item.producto?.nombre}</h3>
+                                    <p className="text-gray-500 text-sm">
+                                        ${item.producto?.precio.toLocaleString()} x {item.cantidad}
+                                    </p>
+                                </div>
+                                <p className="text-md font-semibold">
+                                    ${(item.producto?.precio || 0) * item.cantidad}
+                                </p>
+                            </div>
+                        ))}
+                        <div className="border-t pt-4">
+                            <div className="flex justify-between text-lg font-semibold">
+                                <span>Total</span>
+                                <span>${total.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+
+
+
+
+
+
+                    import { NextApiRequest, NextApiResponse } from "next";
+import cors from "cors";
+import { MercadoPagoConfig, Preference } from "mercadopago";
+import { createClient } from "@supabase/supabase-js";
+
+const client = new MercadoPagoConfig({
+    accessToken: process.env.NEXT_PUBLIC_MP_ACCESS_TOKEN!,
+});
+
+const baseUrl = "https://5aee-181-209-95-211.ngrok-free.app/";
+
+// Configuración de Supabase
+const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
+
+// Middleware de CORS
+const corsMiddleware = cors();
+
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    // Aplica CORS
+    await new Promise((resolve, reject) => {
+        corsMiddleware(req, res, (result) => {
+            if (result instanceof Error) return reject(result);
+            resolve(result);
+        });
+    });
+
+    if (req.method !== "POST") {
+        return res.status(405).json({ error: "Método no permitido" });
+    }
+
+    try {
+        // ✅ Recibir los datos enviados desde el checkout
+        const { carrito, total, payer, shipments } = req.body;
+
+        if (!carrito || !payer || !payer.email || !payer.name) {
+            return res.status(400).json({ error: "Faltan datos requeridos." });
+        }
+
+        // ✅ Estructurar la preferencia para Mercado Pago
+        const body = {
+            items: carrito.map((item: any) => ({
+                id: item.id,
+                title: item.title,
+                quantity: item.quantity,
+                unit_price: item.unit_price,
+                currency_id: "ARS",
+                picture_url: item.picture_url,
+            })),
+            payer: {
+                name: payer.name,
+                surname: payer.surname,
+                email: payer.email,
+                phone: payer.phone,
+                identification: payer.identification,
+                address: payer.address,
+            },
+            shipments: {
+                cost: shipments.cost,
+            },
+            back_urls: {
+                success: `${baseUrl}success?status=success&email=${payer.email}&nombre=${payer.name}&total=${total}`,
+                failure: `${baseUrl}failure?status=failure`,
+                pending: `${baseUrl}pending?status=pending`,
+            },
+            auto_return: "approved",
+            external_reference: "pedido_" + new Date().getTime(), // Referencia única del pedido
+        };
+
+        console.log("Cuerpo de la solicitud:", body);
+
+        // ✅ Crear la preferencia en Mercado Pago
+        const preference = new Preference(client);
+        const result = await preference.create({ body });
+
+        // ✅ Guardar en Supabase
+        const { error: supabaseError } = await supabase.from("pagos").insert({
+            producto_id: carrito.map((item: any) => item.id).join(", "),
+            nombre_comprador: `${payer.name} ${payer.surname}`,
+            email_comprador: payer.email,
+            telefono: payer.phone.number,
+            dni: payer.identification.number,
+            direccion: `${payer.address.street_name}, ${payer.address.zip_code}`,
+            metodo_envio: shipments.cost,
+            total: total,
+            preference_id: result.id,
+            status: "pendiente", // Estado inicial del pago
+        });
+
+        if (supabaseError) {
+            console.error("Error de Supabase:", supabaseError);
+            throw new Error("Error al guardar el pago en la base de datos");
+        }
+
+        res.json({ id: result.id });
+    } catch (error) {
+        console.error("Error al crear la preferencia:", error);
+        res.status(500).json({
+            error: "Error al crear la preferencia :(",
+            details: error.message,
+        });
+    }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+// pagina de checkout sin componentes :
+
+'use client';
+
+import { useState, useEffect } from 'react';
+import { Wallet, initMercadoPago } from '@mercadopago/sdk-react';
+import axios from 'axios';
+import PublicLayout from '@/components/public-layout';
+import { createClient } from '@/utils/supabase/client';
+import Image from 'next/image';
+
+
+
+interface CarritoItem {
+    id: string;
+    cantidad: number;
+    producto_id: string; // ID del producto
+    producto: {
+        id:string;
+        nombre: string;
+        precio: number;
+        imagen: string;
+        peso: number;
+    } | null;
+}
+
+interface TarifaEnvio {
+    empresa: string;
+    precio: number;
+    imagen: string;
+}
+
+export default function CheckoutPage() {
+    const [preferenceId, setPreferenceId] = useState<string | null>(null);
+    const [isCreatingPreference, setIsCreatingPreference] = useState(false);
+    const [showPaymentMethods, setShowPaymentMethods] = useState(false);
+    const [activeTab, setActiveTab] = useState('informacion');
+    const [pesoTotal, setPesoTotal] = useState(0);
+    const [esRegional, setEsRegional] = useState(false);
+    const [tarifasEnvio, setTarifasEnvio] = useState<TarifaEnvio[]>([]);
+    const [formData, setFormData] = useState({
+        nombre: '',
+        apellido: '',
+        dni: '',
+        direccion: '',
+        piso: '',
+        codigoPostal: '',
+        ciudad: '',
+        provincia: '',
+        telefono: '',
+        email: '',
+        aceptarTerminos: false,
+        guardarInformacion: false,
+        envio: 0,
+    });
+
+    const [carrito, setCarrito] = useState<CarritoItem[]>([]);
+    const subtotal = carrito.reduce((acc, item) => acc + (item.producto?.precio || 0) * item.cantidad, 0);
+    const total = subtotal + formData.envio; // Suma el costo de envío al subtotal
+
+    const supabase = createClient();
+
+    useEffect(() => {
+
+        const publicKey = process.env.NEXT_PUBLIC_MP_PUBLIC_KEY as string;
+        if (publicKey) {
+        initMercadoPago(publicKey, {
+            locale: 'es-AR',
+        });
+        }
+
+        const fetchUserAndCarrito = async () => {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                setFormData((prevData) => ({
+                    ...prevData,
+                    email: user.email || '',
+                }));
+
+                const { data, error } = await supabase
+                    .from('carrito')
+                    .select(`id, cantidad, producto_id, productos!inner(id, nombre, precio, imagen, peso)`)
+                    .eq('user_id', user.id);
+
+                if (error) {
+                    console.error('Error obteniendo el carrito:', error);
+                    return;
+                }
+
+                const carritoData: CarritoItem[] = data.map(item => ({
+                    id: item.id,
+                    cantidad: item.cantidad,
+                    producto_id: item.producto_id, // ID del producto
+                    producto: Array.isArray(item.productos) ? item.productos[0] : item.productos,
+                }));
+
+                setCarrito(carritoData);
+
+                const totalCalculado = carritoData.reduce((acc, item) => {
+                    return acc + (item.producto?.precio || 0) * item.cantidad;
+                }, 0);
+
+            }
+        };
+
+        fetchUserAndCarrito();
+    }, [supabase.auth]);
+
+    useEffect(() => {
+        setPesoTotal(carrito.reduce((total, item) => total + ((item.producto?.peso || 0) * item.cantidad) / 1000, 0));
+    }, [carrito]);
+
+    useEffect(() => {
+        const verificarProvincia = async () => {
+            if (!formData.codigoPostal) return;
+            const provincia = await obtenerProvinciaNominatim(formData.codigoPostal);
+            setEsRegional(provincia === "Entre Ríos");
+        };
+        verificarProvincia();
+    }, [formData.codigoPostal]);
+    
+
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const { name, value, type, checked } = e.target;
+        setFormData(prevData => ({
+            ...prevData,
+            [name]: type === 'checkbox' ? checked : value,
+        }));
+    };
+
+    useEffect(() => {
+        const calcularEnvio = async () => {
+            console.log('Peso total convertido a kg:', pesoTotal);
+            console.log('Peso total del carrito:', pesoTotal);
+            if (pesoTotal === 0) return;
+            console.log('Consultando Supabase con peso_max >=', pesoTotal);
+            const { data: tarifas, error } = await supabase
+                .from("metodo_envios")
+                .select("*")
+                .gte("peso_max", pesoTotal)
+                .order("peso_max", { ascending: true })
+                .limit(2);
+            
+            if (!error && tarifas) {
+                console.log('Tarifas obtenidas de Supabase:', tarifas);
+                setTarifasEnvio((tarifas ?? []).map(tarifa => ({
+                    empresa: tarifa.empresa,
+                    precio: esRegional ? tarifa.precio_regional : tarifa.precio_nacional,
+                    imagen: tarifa.imagen
+                })));
+            } else {
+                setTarifasEnvio([]);
+            }
+        };
+        calcularEnvio();
+    }, [pesoTotal, esRegional]);
+
+    const obtenerProvinciaNominatim = async (codigoPostal: string) => {
+        const url = `https://nominatim.openstreetmap.org/search?format=json&country=Argentina&postalcode=${codigoPostal}`;
+    
+        try {
+            const response = await fetch(url);
+            const data = await response.json();
+    
+            if (data.length > 0) {
+                const location = data[0].display_name;
+                return location.includes("Entre Ríos") ? "Entre Ríos" : "Nacional";
+            }
+    
+            return "Nacional"; // Si no encuentra el código postal, lo considera nacional
+        } catch (error) {
+            console.error("Error obteniendo la provincia:", error);
+            return "Nacional";
+        }
+    };
+    
+
+    const handleFinalizarCompra = async () => {
+        try {
+            setIsCreatingPreference(true);
+    
+            // 🔹 Ver los datos que se están enviando al backend
+            const payload = {
+                carrito: carrito.map((item) => ({
+                    id: item.producto_id,
+                    title: item.producto?.nombre || "Producto sin nombre",
+                    quantity: item.cantidad,
+                    unit_price: item.producto?.precio || 0,
+                    currency_id: "ARS",
+                    picture_url: item.producto?.imagen || "",
+                })),
+                total,
+                payer: {
+                    name: formData.nombre,
+                    surname: formData.apellido,
+                    email: formData.email,
+                    phone: { number: formData.telefono },
+                    identification: { type: "DNI", number: formData.dni },
+                    address: {
+                        street_name: `${formData.direccion}, ${formData.ciudad}, ${formData.provincia}`,  // 🔹 Agregamos ciudad y provincia
+                        street_number: formData.piso,
+                        zip_code: formData.codigoPostal,
+                    },
+                },
+                shipments: {
+                    cost: formData.envio, // Incluye el costo de envío
+                },
+            };
+    
+            console.log("Datos enviados a Mercado Pago:", payload); // 🔹 Log para ver los datos enviados
+    
+            const response = await axios.post("/api/create_preference", payload);
+    
+            if (response.data.id) {
+                setPreferenceId(response.data.id);
+            }
+        } catch (error) {
+            console.error("Error al finalizar compra:", error);
+        } finally {
+            setIsCreatingPreference(false);
+        }
+    };
+    
+
+    // Handle the click for showing payment methods
+    const handleShowPaymentMethods = () => {
+        setShowPaymentMethods(true);  // Cambiar estado para mostrar métodos de pago
+    };
+
+    return (
+        <PublicLayout user={null}>
+            <div className="container mx-auto p-4">
+                <h1 className="text-2xl font-bold mb-4">Proceso de pago</h1>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    {/* Pestañas */}
+                    <div className="flex flex-col gap-4">
+                        <div className="flex border-b">
+                            <span
+                                className={`py-2 px-4 ${activeTab === 'informacion' ? 'border-b-2 border-blue-600' : ''}`}
+                            >
+                                Información
+                            </span>
+                            <span
+                                className={`py-2 px-4 ${activeTab === 'envios' ? 'border-b-2 border-blue-600' : ''}`}
+                            >
+                                Envíos
+                            </span>
+                            <span
+                                className={`py-2 px-4 ${activeTab === 'pagos' ? 'border-b-2 border-blue-600' : ''}`}
+                            >
+                                Pagos
+                            </span>
+                        </div>
+
+                        {/* Contenido de cada pestaña */}
+                        {activeTab === 'informacion' && (
+                            <div className="p-4 bg-white rounded-lg shadow-md">
+                                <h2 className="text-xl font-semibold mb-4">Información</h2>
+                                    <form className="space-y-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Nombre</label>
+                                                <input
+                                                    type="text"
+                                                    name="nombre"
+                                                    value={formData.nombre}
+                                                    onChange={handleChange}
+                                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Apellido</label>
+                                                <input
+                                                    type="text"
+                                                    name="apellido"
+                                                    value={formData.apellido}
+                                                    onChange={handleChange}
+                                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">DNI</label>
+                                            <input
+                                                type="text"
+                                                name="dni"
+                                                value={formData.dni}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Dirección</label>
+                                            <input
+                                                type="text"
+                                                name="direccion"
+                                                value={formData.direccion}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Piso (Opcional)</label>
+                                            <input
+                                                type="text"
+                                                name="piso"
+                                                value={formData.piso}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Código Postal</label>
+                                                <input
+                                                    type="text"
+                                                    name="codigoPostal"
+                                                    value={formData.codigoPostal}
+                                                    onChange={handleChange}
+                                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                    required
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="block text-sm font-medium text-gray-700">Ciudad</label>
+                                                <input
+                                                    type="text"
+                                                    name="ciudad"
+                                                    value={formData.ciudad}
+                                                    onChange={handleChange}
+                                                    className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Provincia</label>
+                                            <input
+                                                type="text"
+                                                name="provincia"
+                                                value={formData.provincia}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Teléfono</label>
+                                            <input
+                                                type="text"
+                                                name="telefono"
+                                                value={formData.telefono}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                required
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="block text-sm font-medium text-gray-700">Email</label>
+                                            <input
+                                                type="email"
+                                                name="email"
+                                                value={formData.email}
+                                                onChange={handleChange}
+                                                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                                                required
+                                                disabled
+                                            />
+                                        </div>
+
+                                        {/* Checkboxes */}
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="guardarInformacion"
+                                                checked={formData.guardarInformacion}
+                                                onChange={handleChange}
+                                                className="mr-2"
+                                            />
+                                            <label className="text-sm text-gray-700">Guardar mi información y consultar más rápidamente la próxima vez</label>
+                                        </div>
+                                        <div className="flex items-center">
+                                            <input
+                                                type="checkbox"
+                                                name="aceptarTerminos"
+                                                checked={formData.aceptarTerminos}
+                                                onChange={handleChange}
+                                                className="mr-2 p-2"
+                                                required
+                                            />
+                                            <label className="text-sm text-gray-700">
+                                                Acepto <a href="/paginas/terminos-y-condiciones" className="text-blue-600" target="_blank">los Términos y Condiciones</a>
+                                            </label>
+                                        </div>
+
+                                        {/* Botón de envío */}
+                                        <button
+                                            type="submit"
+                                            className="mt-4 w-full bg-blue-500 text-white py-2 rounded-md"
+                                            disabled={!formData.aceptarTerminos}
+                                            onClick={() => setActiveTab("envios")}
+                                        >
+                                            Continuar al Envio
+                                        </button>
+                                    </form>
+                            </div>
+                        )}
+
+                        {activeTab === 'envios' && (
+                            <div className="p-4 bg-white rounded-lg shadow-md">
+                                <h2 className="text-xl font-semibold mb-4">Detalles de Envío</h2>
+                                <div className='mb-4 border border-s-slate-400 rounded-lg'>
+                                    <div className="text-sm text-gray-700 p-1">
+                                        <strong>Contacto: </strong>{formData.email}
+                                    </div>
+                                    <div className="text-sm text-gray-700 p-1">
+                                        <strong>Enviar a: </strong>
+                                        <div>{formData.dni}</div>
+                                        <div>{formData.direccion}, {formData.piso}</div>
+                                        <div>{formData.ciudad}, {formData.provincia}</div>
+                                    </div>
+                                    <p className='text-sm border border-s-slate-400'>❓ si desea cambiar estos datos puede volver a informacion.</p>  
+                                </div>
+                                <h2 className="text-xl font-semibold mb-4">Métodos de envío</h2>
+                                <div className="mt-4">
+                                    {tarifasEnvio.length > 0 ? (
+                                        tarifasEnvio.map((tarifa, index) => (
+                                            <div key={index} className='flex items-center p-4 border rounded-lg shadow-sm hover:shadow-md transition duration-300'>
+                                                <img src={tarifa.imagen} alt={tarifa.empresa} className='w-15 h-12 mr-4' />
+                                                <div key={index} className="mt-2">
+                                                    <input
+                                                        type="radio"
+                                                        name="envio"
+                                                        id={`envio-${index}`}
+                                                        value={tarifa.precio}
+                                                        className="mr-2"
+                                                        onChange={() => setFormData(prevData => ({ ...prevData, envio: tarifa.precio }))}
+                                                    />
+                                                    <label htmlFor={`envio-${index}`}>
+                                                        {tarifa.empresa} - ${tarifa.precio.toLocaleString()}
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        ))
+                                    ) : (
+                                        <p className="text-gray-500">Calculando tarifas de envío...</p>
+                                    )}
+                                </div>
+                                <div className="flex justify-between mt-4">
+                                    <button
+                                        type="button"
+                                        className="bg-gray-500 text-white py-2 px-4 rounded-md"
+                                        onClick={() => setActiveTab("informacion")}
+                                    >
+                                        Volver a Información
+                                    </button>
+                                    <button
+                                        type="button"
+                                        className="bg-blue-500 text-white py-2 px-4 rounded-md"
+                                        onClick={() => setActiveTab("pagos")}
+                                    >
+                                        Continuar al Pago
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'pagos' && (
+                            <div className="p-4 bg-white rounded-lg shadow-md">
+                                <h2 className="text-xl font-semibold mb-4">Resumen de Pago</h2>
+                                <div>
+                                    <div className="text-sm text-gray-700">
+                                        <strong>Contacto: </strong>{formData.email}
+                                    </div>
+                                    <div className="text-sm text-gray-700">
+                                        <strong>Enviar a: </strong>
+                                        <div>{formData.dni}</div>
+                                        <div>{formData.direccion}, {formData.piso}</div>
+                                        <div>{formData.ciudad}, {formData.provincia}</div>
+                                    </div>
+                                    <div className="text-sm text-gray-700">
+                                        <strong>Método de envio: </strong>
+                                        <div>{formData.envio === 0 ? 'Envío estándar - Gratis' : 'Envío express - $5.00'}</div>
+                                    </div>
+                                </div>
+                                <div className="flex justify-between mt-4">
+                                    
+                                    {/* Botón para mostrar métodos de pago */}
+                                    {!showPaymentMethods && (
+                                        <button
+                                            type="submit"
+                                            className="bg-green-500 text-white py-2 px-4 rounded-md"
+                                            onClick={handleShowPaymentMethods}
+                                        >
+                                            Finalizar Compra
+                                        </button>
+                                    )}
+
+                                    {/* Métodos de pago */}
+                                    {showPaymentMethods && (
+                                        <div className="mt-6 w-full space-y-4">
+                                            {!preferenceId && (
+                                            <button
+                                                className="flex items-center justify-center bg-blue-500 text-white py-3 px-6 rounded-lg w-full hover:bg-blue-600 transition duration-300"
+                                                onClick={handleFinalizarCompra}
+                                                disabled={isCreatingPreference}
+                                            >
+                                                {isCreatingPreference ? 'Creando preferencia...' : (
+                                                <>
+                                                    <img src="/mercado-pago.png" alt="Mercado Pago" className="w-6 h-6 mr-2" />
+                                                    Pagar con Mercado Pago
+                                                </>
+                                                )}
+                                            </button>
+                                            )}
+                                            {preferenceId && <Wallet initialization={{ preferenceId }} />}
+                                        </div>
+                                    )}
+                                </div>
+                                <div className="flex justify-between mt-4">
+                                    <button
+                                            type="button"
+                                            className="bg-gray-500 text-white py-2 px-4 rounded-md"
+                                            onClick={() => setActiveTab("envios")}
+                                        >
+                                            Volver a Envíos
+                                        </button>
+                                </div>
+                            </div>
+                        )}
+
+                        <div>
+                            aqui enlaces
+                        </div>
+                    </div>
+                    {/* Columna derecha: Resumen del pedido */}
+                    <div className="bg-gray-50 p-6 rounded-lg">
+                        <h2 className="text-lg font-bold mb-4">Resumen del pedido</h2>
+                        {carrito.map((item) => (
+                            <div key={item.id} className="flex items-center space-x-4 mb-4">
+                                <div className="w-16 h-16 relative">
+                                    <Image
+                                        src={item.producto?.imagen || ''}
+                                        alt={item.producto?.nombre || ''}
+                                        layout="fill"
+                                        objectFit="cover"
+                                        className="rounded-lg"
+                                    />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-md font-semibold">{item.producto?.nombre}</h3>
+                                    <p className="text-gray-500 text-sm">
+                                        ${item.producto?.precio.toLocaleString()} x {item.cantidad}
+                                    </p>
+                                </div>
+                                <p className="text-md font-semibold">
+                                    ${(item.producto?.precio || 0) * item.cantidad}
+                                </p>
+                            </div>
+                        ))}
+                        <div className="border-t pt-4">
+                            <div className="flex justify-between text-lg font-semibold">
+                                <span>Peso Total</span>
+                                <span>{pesoTotal} kg</span>
+                            </div>
+                            <div className="flex justify-between text-lg font-semibold">
+                                <span>Subtotal</span>
+                                <span>${subtotal.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-lg font-semibold">
+                                <span>Envío</span>
+                                <span>${formData.envio.toLocaleString()}</span>
+                            </div>
+                            <div className="flex justify-between text-lg font-semibold">
+                                <span>Total</span>
+                                <span>${total.toLocaleString()}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </PublicLayout>
+    );
+}
+
