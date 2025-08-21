@@ -1,0 +1,10 @@
+<button
+                        onClick={() => handleToggleFavorito(Number(producto.id))}
+                        className={`px-6 py-2 mt-2 rounded-lg border transition ${
+                            esFavorito
+                                ? 'bg-red-500 text-white hover:bg-red-600'
+                                : 'border-red-500 text-red-500 hover:bg-red-50'
+                        }`}
+                    >
+                        {esFavorito ? '❤️ Quitar de Favoritos' : '❤️ Agregar a Favoritos'}
+                    </button>
