@@ -7,6 +7,7 @@ import Categorias  from "@/components/categorias";
 import SliderProductos from '@/components/SliderProductos';
 import FloatingButton from '@/components/FloatingButton';
 import Nosotros from '@/components/Nosotros';
+import Contacto from '@/components/Contacto';
 import { Roboto } from 'next/font/google';
 import { createClient } from '@/utils/supabase/server';
 import { getProductosValorados  } from '@/actions/productos-actions';
@@ -38,9 +39,11 @@ export default async function Index() {
         <Categorias  categorias={categorias || []} />
         <SliderProductos productos={productos} />
         <Nosotros />
+        <Contacto />
         <NegocioSection/>
         <FloatingButton /> {/* Aquí se incluye el botón flotante */}
       </main>
     </PublicLayout>
   );
 }
+
