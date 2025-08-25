@@ -39,7 +39,7 @@ interface Product {
   marcaIndumentaria?: string;
   modelo?: string;
   origen?: string;
-  materiales?: string;
+  material?: string;
   talles?: Record<string, number>;
   // Campos específicos bolsos
   medidas?: string;
@@ -166,7 +166,7 @@ export default function CreateProductPage() {
         // Campos opcionales para indumentaria (solo si existe)
         modelo: product.modelo || undefined,
         origen: product.origen || undefined,
-        material: product.materiales || undefined,
+        material: product.material || undefined,
         genero: product.marcaIndumentaria || undefined,
 
         // Convertir talles a string si existen
@@ -181,6 +181,7 @@ export default function CreateProductPage() {
         largo: product.largo || undefined,
         textura: product.textura || undefined,
       };
+
 
 
       await createProductAction(nuevoProducto);
