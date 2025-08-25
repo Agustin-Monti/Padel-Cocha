@@ -5,6 +5,7 @@ import FormularioPaleta from "@/components/formularios/FormularioPaleta";
 import FormularioIndumentaria from "@/components/formularios/FormularioIndumentaria";
 import FormularioBolsos from "@/components/formularios/FormularioBolsos";
 import FormularioAccesorios from "@/components/formularios/FormularioAccesorios";
+import FormularioZapatillas from "@/components/formularios/FormularioZapatillas";
 
 export type Producto = {
   id: string;
@@ -302,8 +303,26 @@ const EditarProducto: React.FC<EditarProductoProps> = ({
         <div className="mt-4">
           {nombreCategoria === "paletas" && <FormularioPaleta product={producto} onChange={handleChange} />}
 
-          {nombreCategoria === "indumentaria y calzado" && (
+          {nombreCategoria === "indumentaria" && (
             <FormularioIndumentaria
+              product={producto}
+              onChange={handleChange}
+              onChangeTalle={(talle: string, cantidad: number) => {
+                if (!producto) return;
+
+                const nuevosTalles = { ...(producto.talles || {}), [talle]: cantidad };
+                const nuevoStock = Object.values(nuevosTalles).reduce(
+                  (acc, val) => acc + val,
+                  0
+                );
+
+                setProducto({ ...producto, talles: nuevosTalles, stock: nuevoStock });
+              }}
+            />
+          )}
+
+          {nombreCategoria === "zapatillas" && (
+            <FormularioZapatillas
               product={producto}
               onChange={handleChange}
               onChangeTalle={(talle: string, cantidad: number) => {
