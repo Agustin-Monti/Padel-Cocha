@@ -1,0 +1,68 @@
+import React from "react";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+
+interface Props {
+  product: any;
+  onChange: (
+    e:
+      | React.ChangeEvent<HTMLInputElement>
+      | React.ChangeEvent<HTMLTextAreaElement>
+      | React.ChangeEvent<HTMLSelectElement>
+  ) => void;
+  onChangeTalle: (talle: string, cantidad: number) => void;
+}
+
+// Talles de calzado (podés ajustarlos si querés menos o más)
+const tallesZapatillas = Array.from({ length: 12 }, (_, i) => (35 + i).toString()); 
+// genera ["35","36",...,"46"]
+
+export default function FormularioZapatillas({
+  product,
+  onChange,
+  onChangeTalle,
+}: Props) {
+  return (
+    <div className="border p-6 rounded-lg bg-gray-50">
+      <h2 className="text-xl font-semibold mb-4">Datos Zapatillas</h2>
+
+      <div className="mb-4">
+        <Label>Modelo</Label>
+        <Input name="modelo" value={product.modelo || ""} onChange={onChange} />
+      </div>
+
+      <div className="mb-4">
+        <Label>Origen</Label>
+        <Input name="origen" value={product.origen || ""} onChange={onChange} />
+      </div>
+
+      <div className="mb-4">
+        <Label>Color</Label>
+        <Input name="color" value={product.color || ""} onChange={onChange} />
+      </div>
+
+      <div className="mb-4">
+        <Label>Material</Label>
+        <Input name="material" value={product.material || ""} onChange={onChange} />
+      </div>
+
+      <div className="mb-4">
+        <Label className="block mb-2">Stock por Talle</Label>
+        {tallesZapatillas.map((talle) => (
+          <div key={talle} className="flex items-center gap-2 mb-2">
+            <span className="w-12">{talle}</span>
+            <Input
+              type="number"
+              min={0}
+              value={product.talles?.[talle] || 0}
+              onChange={(e) =>
+                onChangeTalle(talle, Math.max(0, Number(e.target.value)))
+              }
+              className="w-20"
+            />
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
