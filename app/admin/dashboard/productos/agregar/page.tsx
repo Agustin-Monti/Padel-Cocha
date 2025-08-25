@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from "react";
 import Swal from "sweetalert2";
 import "sweetalert2/dist/sweetalert2.min.css";
+import { ArrowLeft } from "lucide-react";
 
 import {
   createProductAction,
@@ -18,6 +19,7 @@ import FormularioPaleta from "@/components/formularios/FormularioPaleta";
 import FormularioIndumentaria from "@/components/formularios/FormularioIndumentaria";
 import FormularioBolsos from "@/components/formularios/FormularioBolsos";
 import FormularioAccesorios from "@/components/formularios/FormularioAccesorios";
+import FormularioZapatillas from "@/components/formularios/FormularioZapatillas";
 
 
 
@@ -137,12 +139,18 @@ export default function CreateProductPage() {
       }
 
       let stockTotal = Number(product.stock) || 0;
-      if (selectedCategoria?.nombre.toLowerCase() === "indumentaria") {
+
+      // Si es indumentaria o zapatillas, el stock se calcula con la suma de talles
+      if (
+        selectedCategoria?.nombre.toLowerCase() === "indumentaria" ||
+        selectedCategoria?.nombre.toLowerCase() === "zapatillas"
+      ) {
         stockTotal = Object.values(product.talles || {}).reduce(
           (acc, val) => acc + val,
           0
         );
       }
+
 
       // Conversión explícita a números para evitar error de tipos
       const nuevoProducto = {
@@ -204,6 +212,19 @@ export default function CreateProductPage() {
       onSubmit={handleSubmit}
       className="max-w-5xl mx-auto bg-white p-8 rounded-xl shadow-md"
     >
+
+      {/* Botón volver */}
+      <div className="mb-4">
+        <button
+          type="button"
+          onClick={() => router.push("/admin/dashboard/productos")}
+          className="flex items-center gap-2 text-blue-600"
+        >
+          <ArrowLeft size={20} />
+          <span>Volver a Productos</span>
+        </button>
+      </div>
+
       <h1 className="text-3xl font-bold mb-6 text-center">Agregar Producto</h1>
 
       {/* Pestañas de categoría */}
@@ -250,8 +271,9 @@ export default function CreateProductPage() {
           />
         </div>
 
-        {/* Ocultar stock para indumentaria */}
-        {selectedCategoria?.nombre.toLowerCase() !== "indumentaria" && (
+        {/* Ocultar stock para indumentaria y zapatillas */}
+        {selectedCategoria?.nombre.toLowerCase() !== "indumentaria" &&
+        selectedCategoria?.nombre.toLowerCase() !== "zapatillas" && (
           <div>
             <Label>Stock</Label>
             <Input
@@ -374,6 +396,14 @@ export default function CreateProductPage() {
 
       {selectedCategoria?.nombre.toLowerCase() === "accesorios" && (
         <FormularioAccesorios product={product} onChange={handleChange} />
+      )}
+
+      {selectedCategoria?.nombre.toLowerCase() === "zapatillas" && (
+        <FormularioZapatillas
+          product={product}
+          onChange={handleChange}
+          onChangeTalle={handleChangeTalle}
+        />
       )}
 
 
