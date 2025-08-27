@@ -65,7 +65,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Contenedor centrado y con max-width */}
-      <div className="mx-auto max-w-4xl">
+      <div className="">
         <GraficosProductosSection />
       </div>
     </div>
