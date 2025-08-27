@@ -88,11 +88,37 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       .sort((a, b) => b.cantidad - a.cantidad)
       .slice(0, 10);
 
+      // Agregar después de "productos más comprados"
+      // --- Productos más añadidos a favoritos ---
+      const { data: favoritos, error: favError } = await supabaseAdmin
+        .from('favoritos')
+        .select('producto_id, productos(nombre)')
+        .not('producto_id', 'is', null);
+
+      if (favError) throw favError;
+
+      const productosFavoritos: Record<string, number> = {};
+      favoritos.forEach((item: any) => {
+        const nombre = item.productos?.nombre || 'Desconocido';
+        productosFavoritos[nombre] = (productosFavoritos[nombre] || 0) + 1;
+      });
+
+      const productosMasFavoritos = Object.entries(productosFavoritos)
+        .map(([nombre, cantidad]) => ({ nombre, cantidad }))
+        .sort((a, b) => b.cantidad - a.cantidad)
+        .slice(0, 10);
+
+
     return res.status(200).json({
       productosPorCategoria,
       productosMasCarrito,
       productosMasComprados,
+      productosMasFavoritos,
     });
+
+
+    
+    
   } catch (error) {
     console.error('❌ Error en graficos-productos:', error);
     return res.status(500).json({ error: 'Error interno del servidor' });
