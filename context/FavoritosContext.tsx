@@ -6,7 +6,7 @@ import { createClient } from "@/utils/supabase/client";
 interface FavoritoItem {
   id: string;
   producto: {
-    id: string; // Asegúrate de que este campo exista
+    id: string;
     nombre: string;
     precio: number;
     imagen: string;
@@ -21,7 +21,7 @@ interface FavoritosContextType {
   favoritosCount: number;
   loading: boolean;
   addFavorito: (productoId: string) => Promise<void>;
-  removeFavorito: (favoritoId: string) => Promise<void>;
+  removeFavorito: (productoId: string) => Promise<void>;
   esFavorito: (productoId: string) => boolean;
   verificarFavorito: (productoId: string) => Promise<void>;
 }
@@ -35,14 +35,16 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
   const supabase = createClient();
 
   const fetchFavoritos = async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
-    if (userError || !user) {
-      console.error("Usuario no autenticado o error:", userError);
+    // si no hay sesión → usuario invitado
+    if (sessionError || !session) {
       setFavoritos([]);
       setLoading(false);
       return;
     }
+
+    const user = session.user;
 
     const { data, error } = await supabase
       .from("favoritos")
@@ -57,7 +59,7 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
     } else {
       const favoritosData: FavoritoItem[] = data.map((item: any) => ({
         id: item.id,
-        producto: Array.isArray(item.productos) ? item.productos[0] : item.productos
+        producto: Array.isArray(item.productos) ? item.productos[0] : item.productos,
       }));
       setFavoritos(favoritosData);
     }
@@ -70,11 +72,11 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
   }, []);
 
   const addFavorito = async (productoId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
     const { error } = await supabase.from("favoritos").insert({
-      user_id: user.id,
+      user_id: session.user.id,
       producto_id: productoId,
     });
 
@@ -87,11 +89,8 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
   };
 
   const removeFavorito = async (productoId: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    console.log("📦 Intentando eliminar favorito con productoId:", productoId);
-    console.log("🧠 Lista de favoritos actuales:", favoritos);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
 
     // Buscar el favorito actual del producto
     const favorito = favoritos.find(
@@ -103,12 +102,10 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
       return;
     }
 
-    console.log("✅ Favorito encontrado para eliminar:", favorito);
-
     const { error } = await supabase
       .from("favoritos")
       .delete()
-      .eq("id", favorito.id); // Aquí usamos el UUID correcto
+      .eq("id", favorito.id);
 
     if (error) {
       console.error("❌ Error al eliminar favorito:", error);
@@ -118,28 +115,26 @@ export const FavoritosProvider = ({ children }: { children: React.ReactNode }) =
     await fetchFavoritos();
   };
 
-
-
   const esFavorito = (productoId: string): boolean => {
     return favoritos.some((item) => item.producto && item.producto.id === productoId);
   };
 
   const verificarFavorito = async (productoId: string): Promise<void> => {
     await fetchFavoritos();
-    // También puedes agregar lógica para hacer algo con `esFavorito(productoId)`
+    // Podrías hacer algo extra acá con esFavorito(productoId)
   };
 
   return (
-    <FavoritosContext.Provider 
-      value={{ 
-        favoritos, 
-        setFavoritos, 
-        favoritosCount: favoritos.length, 
-        loading, 
-        addFavorito, 
-        removeFavorito, 
-        esFavorito, 
-        verificarFavorito 
+    <FavoritosContext.Provider
+      value={{
+        favoritos,
+        setFavoritos,
+        favoritosCount: favoritos.length,
+        loading,
+        addFavorito,
+        removeFavorito,
+        esFavorito,
+        verificarFavorito,
       }}
     >
       {children}
