@@ -5,7 +5,7 @@ export default function Sidebar() {
     <aside className="w-64 bg-gray-800 text-white flex flex-col">
       {/* Logo */}
       <div className="p-4 font-bold text-center border-b border-gray-700">
-        My Dashboard
+        Punto Padel LF
       </div>
 
       {/* Enlaces */}
@@ -70,3 +70,4 @@ export default function Sidebar() {
     </aside>
   );
 }
+
