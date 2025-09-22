@@ -16,7 +16,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const nombreTipo = tipoActual?.nombre || "Productos";
 
   return {
-    title: `${nombreTipo} • La Guillerma`,
+    title: `${nombreTipo} • Punto Padel LF`,
     description: `Productos de tipo ${nombreTipo} disponibles en La Guillerma.`,
   };
 }

@@ -1,11 +1,19 @@
 "use client";
 
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { CheckCircle } from "lucide-react"; // usa Lucide para íconos modernos
-import "./success.css"; // opcional si tenés clases personalizadas
+import { CheckCircle } from "lucide-react";
+import { useCarrito } from "@/context/CarritoContext"; // 👈 importamos el contexto
+import "./success.css";
 
 export default function SuccessPage() {
   const router = useRouter();
+  const { vaciarCarrito } = useCarrito(); // 👈 obtenemos la función
+
+  useEffect(() => {
+    // Apenas entra en success, vaciamos el carrito
+    vaciarCarrito();
+  }, [vaciarCarrito]);
 
   const goToHome = () => {
     router.push("/");
@@ -22,7 +30,9 @@ export default function SuccessPage() {
           El pago ha sido procesado correctamente. <br />
           Se han enviado los detalles de su compra a su correo electrónico.
           <br />
-          <span className="block mt-2 font-medium text-beige-700">¡Muchas gracias por confiar en nosotros!</span>
+          <span className="block mt-2 font-medium text-beige-700">
+            ¡Muchas gracias por confiar en nosotros!
+          </span>
         </p>
         <button
           onClick={goToHome}

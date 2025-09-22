@@ -7,6 +7,7 @@ import { createClient } from '@/utils/supabase/client';
 import { useCarrito } from "@/context/CarritoContext";
 import Image from 'next/image';
 import FormTransferencia from '@/components/FormTransferencia';
+import AlertaStockPago from '@/components/AlertaStockPago';
 
 
 
@@ -283,6 +284,8 @@ export default function CheckoutPage() {
             // 🔹 Armar payload filtrando productos nulos
             const carritoConProductos = carrito.filter((item) => item.producto !== null);
 
+           
+
             const payload = {
             carrito: carritoConProductos.map((item) => {
                 const producto = item.producto!;
@@ -401,11 +404,129 @@ export default function CheckoutPage() {
     }, []);
 
     
+    const [alertaStockOpen, setAlertaStockOpen] = useState(false);
+    const [mensajeStock, setMensajeStock] = useState("");
 
-    // Handle the click for showing payment methods
-    const handleShowPaymentMethods = () => {
-        setShowPaymentMethods(true);  // Cambiar estado para mostrar métodos de pago
+
+    const handleShowPaymentMethods = async () => {
+        try {
+            // ids válidos
+            const idsProductos = carrito.map((item) => item.producto?.id).filter(Boolean);
+            if (idsProductos.length === 0) {
+            setShowPaymentMethods(true);
+            return;
+            }
+
+            // <-- SIN COMENTARIOS DENTRO DE LA CADENA .select
+            const { data, error } = await supabase
+            .from("productos")
+            .select(`
+                id,
+                nombre,
+                stock,
+                talle,
+                categoria_id,
+                categorias ( id, nombre )
+            `)
+            .in("id", idsProductos);
+
+            if (error) {
+            console.error("❌ Error verificando stock:", error);
+            alert("Error verificando stock. Intenta nuevamente.");
+            return;
+            }
+
+            const productosStock = (data || []) as any[]; // tipado relajado para poder inspeccionar
+            console.log("Debug productosStock:", productosStock);
+            console.log("Debug carrito:", carrito);
+
+            const sinStock = carrito.filter((item) => {
+            const productoId = item.producto?.id;
+            if (!productoId) return true;
+
+            // Buscar la fila que vino desde la consulta
+            let productoBD = productosStock.find((p) => p.id === productoId);
+
+            // Si no encontramos por id, intentar fallback por nombre
+            if (!productoBD) {
+                productoBD = productosStock.find((p) => p.nombre === item.producto?.nombre);
+            }
+            if (!productoBD) return true;
+
+            // intentar parsear `talle` como JSON si viene serializado
+            let tallesObj: Record<string, number> | null = null;
+            if (productoBD.talle && typeof productoBD.talle === "string") {
+                const posible = productoBD.talle.trim();
+                if (posible.startsWith("{")) {
+                try {
+                    tallesObj = JSON.parse(posible);
+                } catch (err) {
+                    // no es JSON, seguir con otras comprobaciones
+                    tallesObj = null;
+                }
+                }
+            }
+
+            const categoriaNombre = productoBD.categorias?.[0]?.nombre?.toLowerCase?.() || "";
+
+            // 1) Si hay talles en JSON y el item trae talle -> comprobar ese talle
+            if (tallesObj && item.talle) {
+                const stockTalle = Number(tallesObj[item.talle]) || 0;
+                return stockTalle < item.cantidad;
+            }
+
+            // 2) Si la fila productoBD tiene `talle` como string simple y coincide con el item.talle
+            if (productoBD.talle && item.talle && !tallesObj) {
+                if (String(productoBD.talle) === String(item.talle)) {
+                return Number(productoBD.stock || 0) < item.cantidad;
+                } else {
+                // si la fila no coincide, intentar encontrar la variante (misma nombre + talle)
+                const variante = productosStock.find(
+                    (p) => p.nombre === productoBD.nombre && String(p.talle) === String(item.talle)
+                );
+                if (variante) return Number(variante.stock || 0) < item.cantidad;
+
+                // también intentar encontrar una fila padre que tenga talles (JSON) por nombre
+                const padreConTalles = productosStock.find(
+                    (p) => p.nombre === productoBD.nombre && typeof p.talle === "string" && p.talle.trim().startsWith("{")
+                );
+                if (padreConTalles) {
+                    try {
+                    const obj = JSON.parse(padreConTalles.talle);
+                    return (Number(obj[item.talle]) || 0) < item.cantidad;
+                    } catch {}
+                }
+
+                // no encontramos variante, considerarlo sin stock (o ajustar política)
+                return true;
+                }
+            }
+
+            // 3) Caso general: validar stock global
+            return Number(productoBD.stock || 0) < item.cantidad;
+            });
+
+            if (sinStock.length > 0) {
+                setMensajeStock(
+                    `Los siguientes productos no tienen stock suficiente:\n${sinStock
+                    .map((p) => `${p.producto?.nombre} ${p.talle ? `(Talle ${p.talle})` : ""}`)
+                    .join("\n")}`
+                );
+                setAlertaStockOpen(true);
+                return;
+            }
+
+
+            // todo ok
+            setShowPaymentMethods(true);
+        } catch (err) {
+            console.error("Error en check stock:", err);
+            alert("Ocurrió un error chequeando stock. Reintenta.");
+        }
     };
+
+
+
 
     useEffect(() => {
         fetchCarrito();
@@ -937,43 +1058,47 @@ export default function CheckoutPage() {
                                 </div>
 
                                 <div className="flex-1">
-                                <h3 className="text-md font-medium text-gray-900">
-                                    {item.producto?.nombre}
-                                </h3>
+                                    <h3 className="text-md font-medium text-gray-900">
+                                        {item.producto?.nombre}
+                                    </h3>
 
-                                {item.producto ? (() => {
-                                    const esOferta = item.producto.oferta_activa === true && typeof item.producto.precio_oferta === 'number';
-                                    const precioUnitario = esOferta
-                                    ? item.producto.precio_oferta!
-                                    : item.producto.precio;
-                                    const totalPorProducto = precioUnitario * item.cantidad;
+                                    {item.talle && (
+                                        <p className="text-sm text-gray-500">Talle: {item.talle}</p>
+                                    )}
 
-                                    return (
-                                    <>
-                                        <p className="text-sm text-gray-600">
-                                        {esOferta ? (
-                                            <>
-                                            <span className="text-red-600 font-semibold">
-                                                ${item.producto.precio_oferta!.toLocaleString()}
-                                            </span>
-                                            <span className="line-through ml-2 text-xs text-gray-400">
-                                                ${item.producto.precio.toLocaleString()}
-                                            </span>
-                                            </>
-                                        ) : (
-                                            `$${item.producto.precio.toLocaleString()}`
-                                        )}{" "}
-                                        Cantidad : {item.cantidad}
-                                        </p>
+                                    {item.producto ? (() => {
+                                        const esOferta = item.producto.oferta_activa === true && typeof item.producto.precio_oferta === 'number';
+                                        const precioUnitario = esOferta
+                                        ? item.producto.precio_oferta!
+                                        : item.producto.precio;
+                                        const totalPorProducto = precioUnitario * item.cantidad;
 
-                                        <p className="text-md font-semibold text-gray-800 mt-1">
-                                        ${totalPorProducto.toLocaleString()}
-                                        </p>
-                                    </>
-                                    );
-                                })() : (
-                                    <p className="text-red-500 text-sm">Producto no disponible</p>
-                                )}
+                                        return (
+                                        <>
+                                            <p className="text-sm text-gray-600">
+                                            {esOferta ? (
+                                                <>
+                                                <span className="text-red-600 font-semibold">
+                                                    ${item.producto.precio_oferta!.toLocaleString()}
+                                                </span>
+                                                <span className="line-through ml-2 text-xs text-gray-400">
+                                                    ${item.producto.precio.toLocaleString()}
+                                                </span>
+                                                </>
+                                            ) : (
+                                                `$${item.producto.precio.toLocaleString()}`
+                                            )}{" "}
+                                            Cantidad : {item.cantidad}
+                                            </p>
+
+                                            <p className="text-md font-semibold text-gray-800 mt-1">
+                                            ${totalPorProducto.toLocaleString()}
+                                            </p>
+                                        </>
+                                        );
+                                    })() : (
+                                        <p className="text-red-500 text-sm">Producto no disponible</p>
+                                    )}
                                 </div>
                             </div>
                             ))}
@@ -1006,6 +1131,13 @@ export default function CheckoutPage() {
                         </div>
                     </div>
                 </div>
+                <AlertaStockPago
+                    isOpen={alertaStockOpen}
+                    onClose={() => setAlertaStockOpen(false)}
+                    mensaje={mensajeStock}
+                />
+
             </div>
+            
     );
 }
