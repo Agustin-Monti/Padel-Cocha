@@ -11,8 +11,8 @@ const ProductoCategoryClient = dynamic(() => import("@/components/ProductoCatego
 // ✅ Metadata
 export const generateMetadata = async (): Promise<Metadata> => {
   return {
-    title: "• La Guillerma • Ofertas",
-    description: "Descubrí todos los productos con descuento en La Guillerma. ¡Aprovechá las mejores ofertas!",
+    title: "• Punto Padel LF • Ofertas",
+    description: "¡Aprovechá las mejores ofertas!",
   };
 };
 
@@ -30,3 +30,4 @@ export default async function OfertasPage() {
     </main>
   );
 }
+
