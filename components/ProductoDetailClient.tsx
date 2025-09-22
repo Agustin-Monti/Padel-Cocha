@@ -687,11 +687,13 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                     </div>
                   )}
                   <Link href={`/products/${producto.id}`} prefetch={false}>
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="w-full h-[300px] object-cover rounded-2xl mb-4 hover:scale-105 transition-transform duration-300"
-                    />
+                    <div className="w-full h-[280px] flex items-center justify-center bg-white rounded-2xl mb-4 overflow-hidden">
+                      <img
+                        src={producto.imagen}
+                        alt={producto.nombre}
+                        className="max-h-[260px] object-contain transition-transform duration-300 hover:scale-105"
+                      />
+                    </div>
                   </Link>
                 </div>
 
@@ -744,3 +746,4 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     </div>
   );
 }
+
