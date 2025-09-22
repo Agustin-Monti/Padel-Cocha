@@ -19,8 +19,9 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
 
   const paletas = getCategoria('paletas');
   const accesorios = getCategoria('accesorios');
+  const zapatillas = getCategoria('zapatillas');
   const bolsos = getCategoria('bolsos');
-  const indumentaria = getCategoria('indumentaria y calzado');
+  const indumentaria = getCategoria('indumentaria');
 
   const renderItem = (
     cat: Categoria | undefined,
@@ -59,7 +60,8 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
       >
         <div className="grid grid-cols-6 grid-rows-6 gap-2 w-full h-full">
           {renderItem(paletas, 'col-span-2 row-span-6')}
-          {renderItem(accesorios, 'col-span-4 row-span-3')}
+          {renderItem(accesorios, 'col-span-2 row-span-3')}
+          {renderItem(zapatillas, 'col-span-2 row-span-3')}
           {renderItem(bolsos, 'col-span-2 row-span-3')}
           {renderItem(indumentaria, 'col-span-2 row-span-3')}
         </div>
@@ -70,7 +72,7 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
         className="block lg:hidden w-full mx-auto p-4 space-y-4"
         style={{ backgroundColor: "#e6dfd6" }}
       >
-        {[paletas, accesorios, bolsos, indumentaria].map((cat) => {
+        {[paletas, accesorios, zapatillas, bolsos, indumentaria].map((cat) => {
           const altura = cat?.nombre.toLowerCase() === 'paletas' ? 'h-64' : 'h-52';
           const posicion = cat?.nombre.toLowerCase() === 'paletas' ? 'object-[center_25%]' : '';
           return renderItem(cat, '', altura, posicion);

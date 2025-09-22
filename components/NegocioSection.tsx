@@ -1,40 +1,32 @@
-import Image from 'next/image';
+import { Truck, RefreshCw, CreditCard, Store } from "lucide-react";
 
 const NegocioSection = () => {
   const sections = [
     {
-      image: "/negocio/Domicilio.webp",
+      icon: Truck,
       title: "Envío a Domicilio",
       description: "Recibí tu compra en cualquier parte del país.",
-      width: 80,
-      height: 80,
     },
     {
-      image: "/negocio/Cambios.webp",
+      icon: RefreshCw,
       title: "Cambios y Devoluciones",
       description: "Hasta 30 días después de recibida la compra",
-      width: 80,
-      height: 80,
     },
     {
-      image: "/negocio/Financiacio.webp",
+      icon: CreditCard,
       title: "Financiación",
       description: "3 & 6 Cuotas sin interés. Aceptamos todos los medios de pagos",
-      width: 80,
-      height: 80,
     },
     {
-      image: "/negocio/Pick.webp",
+      icon: Store,
       title: "Pick Up",
       description: "Sin cargo en tiendas habilitadas",
-      width: 70,
-      height: 70,
     },
   ];
 
   return (
-    <div className="w-full px-4 md:px-8 lg:px-16 py-10" style={{ backgroundColor: '#e6dfd6' }}>
-      {/* Título decorado */}
+    <div className="w-full px-4 md:px-8 lg:px-16 py-10 bg-[#e6dfd6]">
+      {/* Título */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center gap-2 w-full max-w-[150px]">
           <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
@@ -49,28 +41,18 @@ const NegocioSection = () => {
         </div>
       </div>
 
-      {/* Grid de beneficios */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 rounded-lg">
-        {sections.map((section, index) => (
-          <div key={index} className="flex flex-col items-center text-center">
-           <div
-              className="mb-4 flex items-center justify-center relative"
-              style={{ width: section.width, height: section.height }}
-            >
-              <Image
-                src={section.image}
-                alt={section.title}
-                fill
-                sizes="(max-width: 768px) 50px, 80px"
-                className="object-contain"
-              />
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        {sections.map(({ icon: Icon, title, description }, i) => (
+          <div
+            key={i}
+            className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-sm transition-transform hover:scale-105"
+          >
+            <div className="w-20 h-20 flex items-center justify-center mb-4 bg-[#f4eee7] rounded-full shadow-inner">
+              <Icon className="w-10 h-10 text-[#816b4b]" />
             </div>
-
-
-            <div className="h-32 flex flex-col justify-center">
-              <h2 className="text-xl font-semibold text-gray-800 mb-2">{section.title}</h2>
-              <p className="text-gray-600">{section.description}</p>
-            </div>
+            <h2 className="text-xl font-semibold text-gray-800 mb-2">{title}</h2>
+            <p className="text-gray-600">{description}</p>
           </div>
         ))}
       </div>

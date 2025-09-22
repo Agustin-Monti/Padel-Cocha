@@ -30,8 +30,8 @@ export default function FormularioBolsos({ product, onChange }: Props) {
       <div className="mb-4">
         <Label>Material</Label>
         <Input
-          name="materiales"
-          value={product.materiales || ""}
+          name="material"
+          value={product.material|| ""}
           onChange={onChange}
         />
       </div>

@@ -24,7 +24,7 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-4">Contacto</h3>
           <ul className="space-y-2 text-sm">
             <li className="flex items-center gap-2">
-              <MapPin size={16} /> Gobernador Mansilla, Entre Rios, Argentina
+              <MapPin size={16} /> Gobernador Mansilla - Paraná Entre Rios, Argentina
             </li>
             <li className="flex items-center gap-2">
               <Mail size={16} /> contacto@tupagina.com

@@ -6,14 +6,21 @@ import Link from "next/link";
 export const SliderPrincipal = () => {
   const slides = [
     {
-      image: "/baner1.jpg",
+      imageDesktop: "/baner1-desktop.jpg",
+      imageMobile: "/baner1-mobile.jpg",
       title: "Marroquinería",
       link: "/marroquineria",
     },
     {
-      image: "/baner1.jpg",
+      imageDesktop: "/baner2-desktop.jpg",
+      imageMobile: "/baner2-mobile.jpg",
       title: "Maquillaje",
       link: "/maquillaje",
+    },
+    {
+      imageDesktop: "/baner3-desktop.png",
+      imageMobile: "/baner3-mobile.png",
+      title: "Marroquinería",
     },
   ];
 
@@ -24,7 +31,7 @@ export const SliderPrincipal = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % slides.length);
-    }, 8000);
+    }, 20000);
     return () => clearInterval(interval);
   }, []);
 
@@ -66,29 +73,44 @@ export const SliderPrincipal = () => {
         {slides.map((slide, index) => (
           <div
             key={index}
-            className="min-w-full h-[280px] sm:h-[350px] md:h-[700px] bg-cover bg-center relative"
+            className="min-w-full h-[320px] sm:h-[450px] md:h-[500px] relative"
             style={{
-              backgroundImage: `url(${slide.image})`,
-              backgroundSize: "cover",
-              backgroundPosition: "center",
               maxHeight: "80vh",
             }}
           >
-            {/* Gradiente en lugar de fondo negro sólido */}
+            {/* Imagen Desktop */}
+            <div
+              className="hidden md:block w-full h-full bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${slide.imageDesktop})`,
+              }}
+            ></div>
+
+            {/* Imagen Mobile */}
+            <div
+              className="block md:hidden w-full h-full bg-cover bg-center"
+              style={{
+                backgroundImage: `url(${slide.imageMobile})`,
+              }}
+            ></div>
+
+            {/* Gradiente */}
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/10"></div>
 
-            {/* Botón en la esquina inferior derecha */}
-            <Link
-              href={slide.link}
-              className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
-            >
-              Ver Más Sobre {slide.title}
-            </Link>
+            {/* Botón */}
+            {slide.link && (
+              <Link
+                href={slide.link}
+                className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+              >
+                Ver Más Sobre {slide.title}
+              </Link>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Botones de navegación */}
+      {/* Botones navegación */}
       <button
         className="absolute top-1/2 left-4 transform -translate-y-1/2 text-white bg-black bg-opacity-50 p-3 rounded-full hover:bg-opacity-75"
         onClick={prevSlide}

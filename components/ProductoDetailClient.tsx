@@ -44,6 +44,10 @@ interface Producto {
   potencia : number;
   control : number;
   juego : string;
+  ancho : string;
+  largo : string;
+  textura : string;
+  color : string;
 
 }
 
@@ -126,15 +130,18 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   }, [producto.id, verificarFavorito]);
 
   useEffect(() => {
-    if (categoriaNombre?.toLowerCase() === "indumentaria y calzado" && producto.talle) {
+    if (
+      (categoriaNombre?.toLowerCase() === "indumentaria" ||
+      categoriaNombre?.toLowerCase() === "zapatillas") &&
+      producto.talle
+    ) {
       try {
         const talles = typeof producto.talle === "string" 
-          ? JSON.parse(producto.talle) as Record<string, number> // Añade el tipo aquí
-          : producto.talle as Record<string, number>; // Y aquí
+          ? JSON.parse(producto.talle) as Record<string, number>
+          : producto.talle as Record<string, number>;
 
         setTallesDisponibles(talles);
-        
-        // Seleccionar automáticamente el primer talle con stock
+
         const tallesConStock = Object.entries(talles).filter(([_, stock]) => stock > 0);
         if (tallesConStock.length > 0) {
           setTalleSeleccionado(tallesConStock[0][0]);
@@ -145,8 +152,13 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     }
   }, [categoriaNombre, producto.talle]);
 
+
   const handleIncrementarCantidad = () => {
-    if (categoriaNombre?.toLowerCase() === "indumentaria y calzado" && talleSeleccionado) {
+    if (
+      (categoriaNombre?.toLowerCase() === "indumentaria" ||
+      categoriaNombre?.toLowerCase() === "zapatillas") &&
+      talleSeleccionado
+    ) {
       const maxCantidad = tallesDisponibles[talleSeleccionado];
       setCantidad(prev => Math.min(prev + 1, maxCantidad));
     } else {
@@ -155,12 +167,16 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   };
 
 
+
   const handleAñadirAlCarrito = async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return console.error('Usuario no autenticado');
 
     // Validar si necesita talle
-    const requiereTalle = categoriaNombre?.toLowerCase() === "indumentaria y calzado";
+    const requiereTalle = 
+      categoriaNombre?.toLowerCase() === "indumentaria" ||
+      categoriaNombre?.toLowerCase() === "zapatillas";
+
     if (requiereTalle && !talleSeleccionado) {
       alert("Por favor, seleccioná un talle antes de añadir al carrito.");
       return;
@@ -417,7 +433,8 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-            {categoriaNombre?.toLowerCase() === "indumentaria y calzado" && (
+            {(categoriaNombre?.toLowerCase() === "indumentaria" || 
+              categoriaNombre?.toLowerCase() === "zapatillas") && (
               <div className="mt-6">
                 <h3 className="text-md font-medium text-gray-800 mb-2">Seleccioná un talle</h3>
                 <div className="flex flex-wrap gap-2">
@@ -560,17 +577,28 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
 
             {categoriaNombre === "Indumentaria" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                {producto.material && <CardEspecificacion label="Material" value={producto.material} />}
-                {producto.capacidad && <CardEspecificacion label="Capacidad" value={producto.capacidad} />}
+                {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
                 {producto.origen && <CardEspecificacion label="Origen" value={producto.origen} />}
+                {producto.color && <CardEspecificacion label="Color" value={producto.color} />}
+                {producto.material && <CardEspecificacion label="Material" value={producto.material} />}
+              </div>
+            )}
+
+            {categoriaNombre === "Zapatillas" && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
+                {producto.origen && <CardEspecificacion label="Origen" value={producto.origen} />}
+                {producto.color && <CardEspecificacion label="Color" value={producto.color} />}
+                {producto.material && <CardEspecificacion label="Material" value={producto.material} />}
               </div>
             )}
 
             {categoriaNombre === "Bolso" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
-                {producto.material && <CardEspecificacion label="Material" value={producto.material} />}
-                {producto.talle && <CardEspecificacion label="Talle" value={producto.talle} />}
                 {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
+                {producto.origen && <CardEspecificacion label="Origen" value={producto.origen} />}
+                {producto.material && <CardEspecificacion label="Material" value={producto.material} />}
+                {producto.capacidad && <CardEspecificacion label="Capacidad" value={producto.capacidad} />}
                 {producto.medidas && <CardEspecificacion label="Medidas" value={producto.medidas} />}
               </div>
             )}
@@ -591,6 +619,15 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
 
               </div>
               
+            )}
+
+            {categoriaNombre === "Accesorios" && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
+                {producto.origen && <CardEspecificacion label="Origen" value={producto.origen} />}
+                {producto.ancho && <CardEspecificacion label="Ancho" value={producto.ancho} />}
+                {producto.largo && <CardEspecificacion label="Largo" value={producto.largo} />}
+                {producto.textura && <CardEspecificacion label="Textura" value={producto.textura} />}
+              </div>
             )}
 
             {/* Agregá más casos según tus categorías */}

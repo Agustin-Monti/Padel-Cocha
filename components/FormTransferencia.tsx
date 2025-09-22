@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import ModalCargando from './ModalCargando';
+import { useCarrito } from '@/context/CarritoContext';
 
 
 interface Props {
@@ -26,6 +28,7 @@ export default function FormTransferencia({ formData, total, productos }: Props)
   const [mensaje, setMensaje] = useState('');
   const [cargando, setCargando] = useState(false);
   const router = useRouter();
+  const { vaciarCarrito } = useCarrito();
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -79,6 +82,8 @@ export default function FormTransferencia({ formData, total, productos }: Props)
 
       if (!response.ok) throw new Error(resJson.error || 'Error inesperado');
 
+      await vaciarCarrito();
+
       router.push('/success');
     } catch (error: any) {
       console.error(error);
@@ -90,6 +95,7 @@ export default function FormTransferencia({ formData, total, productos }: Props)
 
 
   return (
+    <>
     <form
       onSubmit={handleSubmit}
       className="bg-gray-50 p-4 mt-6 border border-gray-300 rounded-lg space-y-4"
@@ -131,5 +137,9 @@ export default function FormTransferencia({ formData, total, productos }: Props)
 
       {mensaje && <p className="text-sm mt-2">{mensaje}</p>}
     </form>
+
+    {/* 👇 Modal de cargando */}
+    <ModalCargando abierto={cargando} mensaje="Procesando pago..." />
+    </>
   );
 }
