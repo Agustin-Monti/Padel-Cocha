@@ -28,6 +28,7 @@ interface CarritoContextType {
   carritoModificado: boolean;
   setCarritoModificado: React.Dispatch<React.SetStateAction<boolean>>;
   total: number;
+  vaciarCarrito: () => Promise<void>;
 }
 
 
@@ -102,6 +103,26 @@ export const CarritoProvider = ({ children }: { children: React.ReactNode }) => 
     }
   };
 
+  const vaciarCarrito = async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { error } = await supabase.from('carrito').delete().eq('user_id', user.id);
+      if (error) {
+        console.error('Error al vaciar carrito:', error);
+        return;
+      }
+
+      // vaciamos estado local
+      setCarrito([]);
+      setCarritoCount(0);
+      setCarritoModificado(prev => !prev);
+    } catch (error) {
+      console.error('Error al vaciar carrito:', error);
+    }
+  };
+
   const total = carrito.reduce((acc, item) => {
     const precioUnitario =
       item.producto?.oferta_activa && item.producto?.precio_oferta
@@ -123,6 +144,7 @@ export const CarritoProvider = ({ children }: { children: React.ReactNode }) => 
       total,
       carritoModificado,        // 👈 NUEVO
       setCarritoModificado,     // 👈 NUEVO
+      vaciarCarrito
     }}>
       {children}
     </CarritoContext.Provider>
