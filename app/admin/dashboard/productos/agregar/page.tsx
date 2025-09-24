@@ -191,6 +191,9 @@ export default function CreateProductPage() {
         text: "El producto se ha agregado correctamente.",
         icon: "success",
         confirmButtonText: "Aceptar",
+        customClass: {
+          confirmButton: "bg-blue-500 text-white font-semibold px-4 py-2 rounded hover:bg-blue-600",
+        },
       }).then(() => {
         router.push("/admin/dashboard/productos");
       });
