@@ -20,16 +20,16 @@ export default function Nosotros() {
           <div className="flex flex-col items-center md:flex-row md:items-center gap-4 text-center md:text-left">
             <div className="w-24 h-24 rounded-full overflow-hidden relative">
               <Image
-                src="/propietario.jpg"
+                src="/propietario.png"
                 alt="Propietario"
                 fill
-                sizes="96px"
+                sizes="80px"
                 className="object-cover"
               />
             </div>
 
             <div>
-              <h3 className="text-xl font-semibold">Juan Pérez</h3>
+              <h3 className="text-xl font-semibold">Luciano Forti</h3>
               <p className="text-sm text-gray-500">Fundador de Punto Padel LF</p>
             </div>
           </div>

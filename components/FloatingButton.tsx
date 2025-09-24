@@ -2,8 +2,8 @@ import Link from "next/link";
 import { FaWhatsapp } from "react-icons/fa"; // Importamos el icono de WhatsApp
 
 export default function FloatingButton() {
-  const phoneNumber = "1234567890"; // Reemplaza con tu número de WhatsApp (sin espacios ni símbolos)
-  const message = encodeURIComponent("¡Hola! Me gustaría obtener más información."); // Mensaje predeterminado
+  const phoneNumber = "+5493445532916"; // Reemplaza con tu número de WhatsApp (sin espacios ni símbolos)
+  const message = encodeURIComponent("¡Hola! Vengo de la Pagina y Me gustaría obtener más información."); // Mensaje predeterminado
 
   return (
     <Link

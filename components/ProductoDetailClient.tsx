@@ -746,4 +746,3 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     </div>
   );
 }
-

@@ -100,7 +100,7 @@ export default function Favorito({ isOpen, onClose }: { isOpen: boolean; onClose
           <p className="text-sm text-gray-500 mb-4">¿Querés saber más de nosotros?</p>
           <div className="flex justify-center gap-6">
             <a
-              href="https://wa.me/5491123456789" // ← poné tu número real en formato internacional sin espacios
+              href="https://wa.me/5493445532916" // ← poné tu número real en formato internacional sin espacios
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center text-gray-700 hover:text-green-600 transition"
@@ -110,7 +110,7 @@ export default function Favorito({ isOpen, onClose }: { isOpen: boolean; onClose
             </a>
 
             <a
-              href="https://www.instagram.com/tu_cuenta"
+              href="https://www.instagram.com/puntopadel_lf"
               target="_blank"
               rel="noopener noreferrer"
               className="flex flex-col items-center text-gray-700 hover:text-pink-600 transition"
@@ -130,7 +130,7 @@ export default function Favorito({ isOpen, onClose }: { isOpen: boolean; onClose
             </a>
 
             <a
-              href="mailto:contacto@tucorreo.com"
+              href="mailto:puntopadellf@gmail.com"
               className="flex flex-col items-center text-gray-700 hover:text-green-600 transition"
             >
               <Mail className="w-6 h-6 mb-1" />

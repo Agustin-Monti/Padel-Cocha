@@ -1,6 +1,7 @@
 "use client";
 import { Facebook, Instagram, MapPin, Mail, Phone } from "lucide-react";
 import { FaTiktok } from "react-icons/fa";
+import SobreNosotrosModal  from "@/components/SobreNosotrosModal";
 
 import Image from "next/image";
 
@@ -27,10 +28,10 @@ export default function Footer() {
               <MapPin size={16} /> Gobernador Mansilla - Paraná Entre Rios, Argentina
             </li>
             <li className="flex items-center gap-2">
-              <Mail size={16} /> contacto@tupagina.com
+              <Mail size={16} /> puntopadellf@gmail.com
             </li>
             <li className="flex items-center gap-2">
-              <Phone size={16} /> +54 9 11 1234-5678
+              <Phone size={16} /> +54 9 3445 532916
             </li>
           </ul>
         </div>
@@ -41,7 +42,7 @@ export default function Footer() {
           <ul className="flex space-x-4">
             <li>
               <a
-                href="https://www.instagram.com/tuusuario"
+                href="https://www.instagram.com/puntopadel_lf"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="hover:text-pink-600 transition"
@@ -77,13 +78,13 @@ export default function Footer() {
           <h3 className="text-lg font-semibold mb-4">Enlaces útiles</h3>
           <ul className="space-y-2 text-sm">
             <li>
-              <a href="/sobre-nosotros" className="hover:underline">Sobre nosotros</a>
+              <SobreNosotrosModal />
             </li>
             <li>
-              <a href="/terminos" className="hover:underline">Términos y condiciones</a>
+              <a href="/paginas/terminos-y-condiciones" className="hover:underline">Términos y condiciones</a>
             </li>
             <li>
-              <a href="/politica" className="hover:underline">Política de privacidad</a>
+              <a href="/paginas/politicas" className="hover:underline">Política de privacidad</a>
             </li>
           </ul>
         </div>

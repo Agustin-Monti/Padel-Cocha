@@ -1,4 +1,4 @@
-import { Truck, RefreshCw, CreditCard, Store } from "lucide-react";
+import { Truck, RefreshCw, MessageCircle, ShieldCheck  } from "lucide-react";
 
 const NegocioSection = () => {
   const sections = [
@@ -13,14 +13,14 @@ const NegocioSection = () => {
       description: "Hasta 30 días después de recibida la compra",
     },
     {
-      icon: CreditCard,
-      title: "Financiación",
-      description: "3 & 6 Cuotas sin interés. Aceptamos todos los medios de pagos",
+      icon: MessageCircle,
+      title: "Asesoramiento Personalizado",
+      description: "Te ayudamos a elegir el producto ideal para vos.",
     },
     {
-      icon: Store,
-      title: "Pick Up",
-      description: "Sin cargo en tiendas habilitadas",
+      icon: ShieldCheck,
+      title: "Garantía Oficial",
+      description: "Todos nuestros productos cuentan con garantía oficial.",
     },
   ];
 

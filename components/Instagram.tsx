@@ -15,9 +15,9 @@ export default function Instagram() {
   // Datos mock
   const profileImage = "/instagram/logo.png";
   const username = "puntopadel_lf";
-  const followers = 1914;
-  const following = 1703;
-  const posts = 60;
+  const followers = 1959;
+  const following = 1632;
+  const posts = 63;
 
   const recentPosts: Post[] = [
     {

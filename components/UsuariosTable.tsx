@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { getUsuarios } from "@/actions/usuarios-actions";
-import { Pencil, Trash2 } from "lucide-react";
+import { Eye, Trash2 } from "lucide-react";
 import ModalUsuario from "@/components/ModalUsuario";
 
 export default function UsuariosTable() {
@@ -69,7 +69,7 @@ export default function UsuariosTable() {
                     className="bg-blue-500 text-white p-1 rounded flex items-center justify-center w-8 h-8"
                     title="Ver"
                   >
-                    <Pencil className="h-5 w-5" />
+                    <Eye className="h-5 w-5" />
                   </button>
                   <button
                     onClick={() => onDelete(usuario.id)}
