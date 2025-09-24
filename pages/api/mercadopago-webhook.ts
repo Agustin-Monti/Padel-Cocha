@@ -96,20 +96,38 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             },
           });
 
+          // Preparar lista de productos en HTML
+          let productosNombres = '';
+          try {
+            const productos = JSON.parse(existingPayment.productos_comprados);
+            productosNombres = productos
+              .map((p: any) => `<li>${p.nombre} (x${p.cantidad})</li>`)
+              .join('');
+          } catch (error) {
+            console.error('❌ Error parseando productos_comprados para el mail:', error);
+          }
+
           const mailOptions = {
             from: process.env.GMAIL_USER,
             to: existingPayment.email_comprador,
-            subject: `Pago aprobado en GiovannaShop!`,
-            text: `
-              Hola ${existingPayment.nombre_comprador},
+            subject: 'Pago Aprobado con Mercado Pago en Punto Padel LF!',
+            html: `
+              <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+                <h2>Hola ${existingPayment.nombre_comprador},</h2>
+                <p>Tu pago ha sido aprobado con éxito ✅</p>
 
-              Tu pago ha sido aprobado con éxito. Aquí están los detalles:
+                <h3>🛒 Productos comprados:</h3>
+                <ul>
+                  ${productosNombres}
+                </ul>
 
-              - Productos: ${existingPayment.producto_id}
-              - Monto del pago: $${paymentData.transaction_amount}
-              - Estado del pago: ${paymentData.status}
+                <p><strong>💵 Monto del pago:</strong> $${paymentData.transaction_amount}</p>
+                <p><strong>📦 Estado del pago:</strong> ${paymentData.status}</p>
 
-              Gracias por tu compra.
+                <p>Tu pedido está en proceso. Cuando los productos estén listos, recibirás otro correo con la confirmación de envío.</p>
+
+                <p>Gracias por tu compra en <strong>Punto Padel LF</strong>!</p>
+              </div>
             `,
           };
 
