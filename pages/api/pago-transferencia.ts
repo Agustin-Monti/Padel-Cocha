@@ -185,20 +185,31 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
           },
         });
 
+        const productosNombres = productosFinal
+          .map((p: any) => `• ${p.nombre} (x${p.cantidad})`)
+          .join("\n");
+
         const mailOptions = {
           from: process.env.GMAIL_USER,
           to: pagoData.email_comprador,
-          subject: 'Pago por transferencia aprobado en GiovannaShop!',
-          text: `
-            Hola ${pagoData.nombre_comprador},
+          subject: 'Pago por Transferencia Aprobado en Punto Padel LF!',
+          html: `
+            <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.5;">
+              <h2>Hola ${pagoData.nombre_comprador},</h2>
+              <p>Tu pago por transferencia ha sido aprobado con éxito ✅</p>
 
-            Tu pago por transferencia ha sido aprobado con éxito.
+              <h3>🛒 Productos comprados:</h3>
+              <ul>
+                ${productosNombres}
+              </ul>
 
-            - Productos: ${pagoData.producto_id}
-            - Monto del pago: $${pagoData.total}
-            - Estado del pago: aprobado
+              <p><strong>💵 Monto del pago:</strong> $${pagoData.total}</p>
+              <p><strong>📦 Estado del pago:</strong> aprobado</p>
 
-            Gracias por tu compra.
+              <p>Tu pedido está en proceso. Cuando los productos estén listos, recibirás otro correo con la confirmación de envío.</p>
+
+              <p>Gracias por tu compra en <strong>Punto Padel LF</strong>!</p>
+            </div>
           `,
         };
 
