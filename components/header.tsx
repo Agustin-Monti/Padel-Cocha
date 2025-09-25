@@ -112,7 +112,7 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
           <div className="lg:hidden">
             <button 
               onClick={toggleMobileMenu}
-              className="text-gray-700 hover:text-gray-900 transition-colors"
+              className="text-white hover:text-gray-500 transition-colors"
             >
               {isMobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
@@ -322,4 +322,5 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
 
     </>
   );
+
 };
