@@ -52,7 +52,7 @@ export default function Contacto() {
             className="inline-flex items-center gap-2 bg-white text-indigo-700 font-semibold px-6 py-3 rounded-full shadow-md hover:bg-gray-100 transition"
           >
             <Package size={20} />
-            Vender mi producto
+            Mostrar Mi Producto Usado
             <ArrowRight size={20} />
           </Link>
         </div>
@@ -69,3 +69,4 @@ export default function Contacto() {
     </section>
   );
 }
+
