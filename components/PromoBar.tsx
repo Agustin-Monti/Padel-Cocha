@@ -2,11 +2,9 @@
 import { motion } from "framer-motion";
 
 const mensajes = [
-  "3 y 6 cuotas sin interés",
-  "Ofertas por el Día del Padre",
-  "Envío gratis en compras mayores a $50.000",
-  "10% OFF Transferencia",
-  "15% OFF Efectivo",
+  "Ofertas Especiales",
+  "Envios Gratis superando los 150.000",
+  "Descuentos Exclusivos en Efectivo y Transferencia",
 ];
 
 export const PromoBar = () => {
@@ -30,3 +28,4 @@ export const PromoBar = () => {
     </div>
   );
 };
+
