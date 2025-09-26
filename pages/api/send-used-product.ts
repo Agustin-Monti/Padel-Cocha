@@ -1,58 +1,57 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import nodemailer from "nodemailer";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   if (req.method !== "POST") {
     return res.status(405).json({ message: "Método no permitido" });
   }
 
-  const {
-    nombre,
-    precio,
-    stock,
-    descripcion,
-    categoria_id,
-    tipo_id,
-    marca_id,
-    color,
-    peso,
-    grupo_variantes,
-    talles,
-  } = req.body;
+  const { nombre, color, descripcion, propietario, telefono, email, imagen  } = req.body;
 
   // Validaciones básicas
-  if (!nombre || !precio || !descripcion) {
+  if (!nombre || !descripcion || !propietario || !telefono || !email) {
     return res.status(400).json({ message: "Faltan datos requeridos" });
   }
 
   try {
-    // Configuración del transporter con Gmail (usar App Password si tenés 2FA)
+    // Configuración del transporter con Gmail (usar App Password si tenés 2FA activado)
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.GMAIL_USER, // tu correo (ej: negocio@gmail.com)
-        pass: process.env.GMAIL_PASSWORD, // tu contraseña o app password
+        user: process.env.GMAIL_USER,
+        pass: process.env.GMAIL_PASSWORD,
       },
     });
 
     const mailOptions = {
       from: process.env.GMAIL_USER,
-      to: process.env.GMAIL_USER, // acá recibís vos
-      subject: `Nuevo producto usado para vender: ${nombre}`,
+      to: process.env.GMAIL_USER,
+      subject: `Nuevo producto usado: ${nombre}`,
       html: `
         <h2>Detalles del producto usado</h2>
-        <p><strong>Nombre:</strong> ${nombre}</p>
-        <p><strong>Precio:</strong> $${precio}</p>
-        <p><strong>Stock:</strong> ${stock || "-"}</p>
-        <p><strong>Peso:</strong> ${peso || "-"}</p>
+        <p><strong>Nombre del producto:</strong> ${nombre}</p>
         <p><strong>Color:</strong> ${color || "-"}</p>
-        <p><strong>Grupo Variantes:</strong> ${grupo_variantes || "-"}</p>
         <p><strong>Descripción:</strong> ${descripcion}</p>
-        <p><strong>Categoría:</strong> ${categoria_id}</p>
-        <p><strong>Tipo:</strong> ${tipo_id}</p>
-        <p><strong>Marca:</strong> ${marca_id}</p>
-        <p><strong>Talles:</strong> ${talles ? JSON.stringify(talles) : "-"}</p>
+        <hr/>
+        <h3>Datos del propietario</h3>
+        <p><strong>Nombre:</strong> ${propietario}</p>
+        <p><strong>Teléfono:</strong> ${telefono}</p>
+        <p><strong>Email:</strong> ${email}</p>
+        <hr/>
+        <p>Se adjunta la imagen del producto.</p>
       `,
+      attachments: imagen
+        ? [
+            {
+              filename: `producto-usado-${Date.now()}.jpg`,
+              content: imagen.split("base64,")[1], // quitar el encabezado "data:image/jpeg;base64,"
+              encoding: "base64",
+            },
+          ]
+        : [],
     };
 
     await transporter.sendMail(mailOptions);
