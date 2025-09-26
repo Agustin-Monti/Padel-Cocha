@@ -9,8 +9,8 @@ const NegocioSection = () => {
     },
     {
       icon: RefreshCw,
-      title: "Cambios y Devoluciones",
-      description: "Hasta 30 días después de recibida la compra",
+      title: "Permutas y Publicar mi Producto",
+      description: "Tanto comprar como vender tu producto en nuestra pagina.",
     },
     {
       icon: MessageCircle,
@@ -61,3 +61,4 @@ const NegocioSection = () => {
 };
 
 export default NegocioSection;
+
