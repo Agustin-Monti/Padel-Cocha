@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const nombreMarca = marcaActual?.nombre || "Marca";
 
   return {
-    title: `${nombreMarca} • La Guillerma`,
+    title: `${nombreMarca} • Punto Padel LF`,
     description: `Productos de la marca ${nombreMarca} disponibles en La Guillerma.`,
   };
 }
@@ -23,3 +23,4 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default function Page() {
   return <ProductosCategoryMarca />;
 }
+
