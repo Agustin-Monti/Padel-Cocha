@@ -16,11 +16,12 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   return {
     title: `${nombreMarca} • Punto Padel LF`,
-    description: `Productos de la marca ${nombreMarca} disponibles en La Guillerma.`,
+    description: `Productos de la marca ${nombreMarca} disponibles en Punto Padel LF.`,
   };
 }
 
 export default function Page() {
   return <ProductosCategoryMarca />;
 }
+
 
