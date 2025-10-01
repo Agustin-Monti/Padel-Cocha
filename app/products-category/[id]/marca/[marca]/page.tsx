@@ -4,14 +4,15 @@ import { getMarcas } from "@/actions/products-category-actions";
 
 type PageProps = {
   params: {
-    categoria_id: string;
-    marca_id: string;
+    id: string;      // categoría
+    marca: string;   // marca
   };
 };
 
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const marcas = await getMarcas();
-  const marcaActual = marcas.find((m) => String(m.id) === String(params.marca_id));
+  const marcaActual = marcas.find((m) => String(m.id) === String(params.marca));
   const nombreMarca = marcaActual?.nombre || "Marca";
 
   return {
@@ -20,8 +21,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
+
 export default function Page() {
   return <ProductosCategoryMarca />;
 }
-
-
