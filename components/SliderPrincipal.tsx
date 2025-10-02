@@ -96,14 +96,14 @@ export const SliderPrincipal = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/10"></div>
 
             {/* Botón */}
-            {slide.link && (
+            /* {slide.link && (
               <Link
                 href={slide.link}
                 className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
               >
                 Ver Más Sobre {slide.title}
               </Link>
-            )}
+            )} */
           </div>
         ))}
       </div>
@@ -137,4 +137,5 @@ export const SliderPrincipal = () => {
     </div>
   );
 };
+
 
