@@ -11,8 +11,7 @@ export const PromoBar = () => {
   const texto = mensajes.join("      •      "); // separador entre mensajes
 
   return (
-    <div className="text-white text-sm py-2 font-medium overflow-hidden whitespace-nowrap"
-    style={{ backgroundColor: "#0A1F44" }}>
+    <div className="text-white text-sm py-2 font-medium overflow-hidden whitespace-nowrap bg-gradient-to-r from-blue-800 to-indigo-900">
       <motion.div
         className="inline-block"
         initial={{ x: "100%" }} // empieza desde la derecha
@@ -28,4 +27,3 @@ export const PromoBar = () => {
     </div>
   );
 };
-
