@@ -25,14 +25,14 @@ const NegocioSection = () => {
   ];
 
   return (
-    <div className="w-full px-4 md:px-8 lg:px-16 py-10 bg-[#e6dfd6]">
+    <div className="w-full px-4 md:px-8 lg:px-16 py-10 bg-gradient-to-br from-[#f9f5f0] to-[#e6dfd6]">
       {/* Título */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center gap-2 w-full max-w-[150px]">
           <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
           <div className="h-[2px] bg-[#816b4b] flex-1" />
         </div>
-        <h2 className="text-2xl md:text-3xl font-amatic font-bold text-[#816b4b] mx-4 text-center whitespace-nowrap">
+        <h2 className="text-2xl md:text-3xl font-anton font-bold text-[#816b4b] mx-4 text-center whitespace-nowrap">
           Conocé nuestros beneficios
         </h2>
         <div className="flex items-center gap-2 w-full max-w-[150px]">
@@ -61,4 +61,3 @@ const NegocioSection = () => {
 };
 
 export default NegocioSection;
-
