@@ -630,12 +630,20 @@ export default function CheckoutPage() {
                                             <div className="space-y-2">
                                             <label className="text-sm font-medium text-gray-700">Seleccionar dirección guardada</label>
                                             {direccionGuardada.map((dir, index) => (
-                                                <div key={index} className="border p-4 rounded-md shadow-sm flex items-start gap-2">
+                                                <label 
+                                                    key={index} 
+                                                    className={`block border rounded-xl p-4 shadow-sm cursor-pointer transition 
+                                                    hover:shadow-md hover:border-blue-400 
+                                                    ${formData.direccion === dir.direccion ? "border-blue-500 bg-blue-50" : "border-gray-200"}
+                                                    `}
+                                                >
+                                                    <div className="flex items-start gap-3">
                                                     <input
-                                                    type="radio"
-                                                    name="direccionSeleccionada"
-                                                    value={index}
-                                                    onChange={async () => {
+                                                        type="radio"
+                                                        name="direccionSeleccionada"
+                                                        value={index}
+                                                        checked={formData.direccion === dir.direccion}
+                                                        onChange={async () => {
                                                         const nuevaData = {
                                                             ...formData,
                                                             direccion: dir.direccion,
@@ -644,31 +652,37 @@ export default function CheckoutPage() {
                                                             ciudad: dir.ciudad,
                                                             provincia: dir.provincia,
                                                         };
-
                                                         setFormData(nuevaData);
 
                                                         const provinciaDetectada = await obtenerProvinciaNominatim(dir.codigo_postal);
                                                         console.log("🌍 Provincia detectada desde dirección guardada:", provinciaDetectada);
                                                         setEsRegional(provinciaDetectada === "Entre Ríos");
-                                                    }}
-
+                                                        }}
+                                                        className="mt-1 accent-blue-600"
                                                     />
                                                     <div>
-                                                    <p className="font-medium">{dir.direccion}, {dir.piso}</p>
-                                                    <p className="text-sm text-gray-600">
-                                                        {dir.codigo_postal}, {dir.ciudad}, {dir.provincia}
-                                                    </p>
+                                                        <p className="font-semibold text-gray-800">
+                                                        {dir.direccion} {dir.piso && `, ${dir.piso}`}
+                                                        </p>
+                                                        <p className="text-sm text-gray-600">
+                                                        {dir.codigo_postal}, {dir.ciudad}
+                                                        </p>
+                                                        <p className="text-xs text-gray-500 italic">{dir.provincia}</p>
                                                     </div>
-                                                </div>
+                                                    </div>
+                                                </label>
                                             ))}
+
 
                                             <button
                                                 type="button"
-                                                className="text-blue-600 underline text-sm mt-2"
                                                 onClick={() => setAgregarNueva(true)}
+                                                className="flex items-center gap-2 text-sm font-medium text-blue-600 border border-blue-200 px-4 py-2 rounded-lg hover:bg-blue-50 transition"
                                             >
-                                                + Agregar Nueva Dirección
+                                                <span className="text-lg">＋</span> Agregar Nueva Dirección
                                             </button>
+
+
                                             </div>
                                         ) : (
                                             // Mostrar formulario para nueva dirección
@@ -916,11 +930,20 @@ export default function CheckoutPage() {
                                 </button>
                                 <button
                                     type="button"
-                                    className="bg-blue-600 text-white px-5 py-2 rounded-lg hover:bg-blue-700 transition"
-                                    onClick={() => setActiveTab("pagos")}
+                                    className={`px-5 py-2 rounded-lg transition 
+                                        ${formData.empresaEnvio 
+                                        ? "bg-blue-600 text-white hover:bg-blue-700" 
+                                        : "bg-gray-300 text-gray-500 cursor-not-allowed"}`}
+                                    disabled={!formData.empresaEnvio} 
+                                    onClick={() => {
+                                        if (formData.empresaEnvio) {
+                                        setActiveTab("pagos");
+                                        }
+                                    }}
                                 >
                                     Continuar al Pago →
                                 </button>
+
                                 </div>
                             </div>
                         )}
@@ -979,7 +1002,7 @@ export default function CheckoutPage() {
                                                 "Creando preferencia..."
                                             ) : (
                                                 <>
-                                                <img src="/mercado-pago.png" alt="Mercado Pago" className="w-6 h-6" />
+                                                <img src="/mercado-pago.svg" alt="Mercado Pago" className="w-9 h-6" />
                                                 Pagar con Mercado Pago
                                                 </>
                                             )}
