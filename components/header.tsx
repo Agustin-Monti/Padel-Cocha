@@ -250,6 +250,16 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
             </div>
           ))}
 
+          {/* BOTÓN DE OFERTA (solo si hay ofertas y estamos en cliente) */}
+          {typeof window !== "undefined" && hayOfertas && (
+            <Link
+              href="/ofertas"
+              className="block mt-4 bg-red-500 text-white font-bold px-3 py-2 rounded shadow hover:bg-red-600 animate-pulse text-center"
+            >
+              ¡OFERTA!
+            </Link>
+          )}
+
           {/* Autenticación al final del menú móvil */}
           <div className="mt-4 border-t border-gray-200 pt-4">
             {!hasEnvVars ? <EnvVarWarning /> : <HeaderAuth user={user} />}
@@ -324,4 +334,5 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
   );
 
 };
+
 
