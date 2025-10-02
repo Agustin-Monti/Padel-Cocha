@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import Link from 'next/link';
 
-
 export type Producto = {
   id: string;
   nombre: string;
@@ -14,7 +13,7 @@ export type Producto = {
   oferta_activa: boolean; 
   precio_oferta: number;
   marca_id: string;
-  marcas?: { id: string; nombre: string }; // relación con marcas
+  marcas?: { id: string; nombre: string };
 };
 
 export type TipoProducto = {
@@ -154,7 +153,6 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
                         />
                       </div>
                     </Link>
-
                   </div>
 
                   {/* Nombre truncado */}
@@ -198,9 +196,6 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
                   <p className="text-sm font-poppins text-gray-700">💳 6 cuotas disponibles con tarjeta</p>
                 </div>
               </div>
-
-
-
             );
           })
         ) : (
@@ -209,12 +204,11 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
           </div>
         )}
       </section>
-
     </div>
   );
 }
 
-// ⬇️ COMPONENTE FILTROS CON MARCA AGREGADA
+// ⬇️ COMPONENTE FILTROS CORREGIDO
 function Filtros({
   tiposProductos,
   cantidadPorTipo,
@@ -253,7 +247,7 @@ function Filtros({
       <h3 className="text-md font-medium mb-2">Tipos de productos</h3>
       <ul className="border-b-2">
         {tiposProductos.map((tipo) => (
-          <li key={tipo.id} className="mb-4">
+          <li key={tipo.id} className="mb-4"> {/* KEY AGREGADO */}
             <label className="flex items-center space-x-4">
               <input
                 type="checkbox"
@@ -273,7 +267,7 @@ function Filtros({
       <h3 className="text-md font-medium mt-4 mb-2">Colores</h3>
       <ul className="border-b-2">
         {coloresDisponibles.map((color) => (
-          <li key={color} className="mb-4">
+          <li key={color} className="mb-4"> {/* KEY AGREGADO */}
             <label className="flex items-center space-x-4">
               <input
                 type="checkbox"
@@ -290,7 +284,7 @@ function Filtros({
       <h3 className="text-md font-medium mt-4 mb-2">Marcas</h3>
       <ul className="border-b-2">
         {marcasDisponibles.map((marca) => (
-          <li key={marca.id} className="mb-4">
+          <li key={marca.id} className="mb-4"> {/* KEY AGREGADO */}
             <label className="flex items-center space-x-4">
               <input
                 type="checkbox"
