@@ -55,8 +55,7 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
     <>
       {/* 🖥️ Versión desktop */}
       <div
-        className="hidden lg:block w-full h-[800px] mx-auto p-4"
-        style={{ backgroundColor: "#e6dfd6" }}
+        className="hidden lg:block w-full h-[800px] mx-auto p-4 bg-gradient-to-br from-[#f9f5f0] to-[#e6dfd6]"
       >
         <div className="grid grid-cols-6 grid-rows-6 gap-2 w-full h-full">
           {renderItem(paletas, 'col-span-2 row-span-6')}
@@ -69,8 +68,7 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
 
       {/* 📱 Versión móvil */}
       <div
-        className="block lg:hidden w-full mx-auto p-4 space-y-4"
-        style={{ backgroundColor: "#e6dfd6" }}
+        className="block lg:hidden w-full mx-auto p-4 space-y-4 bg-gradient-to-br from-[#f9f5f0] to-[#e6dfd6]"
       >
         {[paletas, accesorios, zapatillas, bolsos, indumentaria].map((cat) => {
           const altura = cat?.nombre.toLowerCase() === 'paletas' ? 'h-64' : 'h-52';
@@ -83,3 +81,4 @@ const Categorias: React.FC<Props> = ({ categorias }) => {
 };
 
 export default Categorias;
+
