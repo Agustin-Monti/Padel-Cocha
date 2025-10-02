@@ -9,13 +9,11 @@ export const SliderPrincipal = () => {
       imageDesktop: "/baner1-desktop.jpg",
       imageMobile: "/baner1-mobile.jpg",
       title: "Marroquinería",
-      link: "/marroquineria",
     },
     {
       imageDesktop: "/baner2-desktop.jpg",
       imageMobile: "/baner2-mobile.jpg",
       title: "Maquillaje",
-      link: "/maquillaje",
     },
     {
       imageDesktop: "/baner3-desktop.png",
@@ -139,3 +137,4 @@ export const SliderPrincipal = () => {
     </div>
   );
 };
+
