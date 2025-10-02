@@ -1,17 +1,11 @@
 // app/ofertas/page.tsx
-
 import { getProductosEnOferta, getTiposDeProductos } from "@/actions/oferta-actions";
-import dynamic from "next/dynamic";
+import ProductoCategoryClient from "@/components/ProductoCategoryClient"; // ← Import directo
 import { Metadata } from "next";
 
-const ProductoCategoryClient = dynamic(() => import("@/components/ProductoCategoryClient"), {
-  ssr: false,
-});
-
-// ✅ Metadata
 export const generateMetadata = async (): Promise<Metadata> => {
   return {
-    title: "• Punto Padel LF • Ofertas",
+    title: "Ofertas • Punto Padel LF •",
     description: "¡Aprovechá las mejores ofertas!",
   };
 };
