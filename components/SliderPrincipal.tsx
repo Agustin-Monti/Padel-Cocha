@@ -57,7 +57,7 @@ export const SliderPrincipal = () => {
   };
 
   return (
-    <div className="relative w-screen max-w-none mx-auto overflow-hidden rounded-lg shadow-lg">
+    <div className="relative w-full mx-auto overflow-hidden shadow-lg">
       {/* Slides */}
       <div
         className="flex transition-transform duration-700 ease-in-out"
@@ -71,11 +71,10 @@ export const SliderPrincipal = () => {
         {slides.map((slide, index) => (
           <div
             key={index}
-            className="min-w-full h-[320px] sm:h-[450px] md:h-[500px] relative"
-            style={{
-              maxHeight: "80vh",
-            }}
+            className="min-w-full shrink-0 h-[320px] sm:h-[450px] md:h-[500px] relative"
+            style={{ maxHeight: "80vh" }}
           >
+
             {/* Imagen Desktop */}
             <div
               className="hidden md:block w-full h-full bg-cover bg-center"
@@ -96,7 +95,14 @@ export const SliderPrincipal = () => {
             <div className="absolute inset-0 bg-gradient-to-b from-black/40 to-black/10"></div>
 
             {/* Botón */}
-            
+            {/* {slide.link && (
+              <Link
+                href={slide.link}
+                className="absolute bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 sm:px-6 py-2 sm:py-3 text-sm sm:text-lg bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition"
+              >
+                Ver Más Sobre {slide.title}
+              </Link>
+            )} */}
           </div>
         ))}
       </div>
@@ -130,6 +136,3 @@ export const SliderPrincipal = () => {
     </div>
   );
 };
-
-
-
