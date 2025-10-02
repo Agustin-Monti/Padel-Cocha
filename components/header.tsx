@@ -102,8 +102,7 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
     <>
       {/* Header superior */}
       <div
-        className="flex justify-between items-center shadow-md relative min-h-[147px] px-4"
-        style={{ backgroundColor: "#0A1F44" }}
+        className="flex justify-between items-center shadow-md relative min-h-[147px] px-4 bg-gradient-to-r from-blue-800 to-indigo-900"
       >
 
         {/* Contenedor izquierdo */}
@@ -332,7 +331,4 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
 
     </>
   );
-
 };
-
-
