@@ -60,19 +60,19 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
   };
 
   return (
-    <div className="w-full py-10 px-4 md:px-8 lg:px-16" style={{ backgroundColor: '#e6dfd6' }}>
+    <div className="w-full py-10 px-4 md:px-8 lg:px-16 bg-gradient-to-r from-blue-800 to-indigo-900">
       {/* Título decorado */}
       <div className="flex items-center justify-center mb-6">
         <div className="flex items-center gap-2 w-full max-w-[150px]">
-          <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
-          <div className="h-[2px] bg-[#816b4b] flex-1" />
+          <div className="w-2 h-2 bg-[#f7f6f6] rounded-full" />
+          <div className="h-[2px] bg-[#f7f6f6] flex-1" />
         </div>
-        <h2 className="text-2xl md:text-3xl font-amatic font-bold text-[#816b4b] mx-4 text-center whitespace-nowrap">
+        <h2 className="text-2xl md:text-3xl font-anton font-bold text-[#fcfbfa] mx-4 text-center whitespace-nowrap">
           Productos más valorados
         </h2>
         <div className="flex items-center gap-2 w-full max-w-[150px]">
-          <div className="h-[2px] bg-[#816b4b] flex-1" />
-          <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
+          <div className="h-[2px] bg-[#f7f6f6] flex-1" />
+          <div className="w-2 h-2 bg-[#f7f6f6] rounded-full" />
         </div>
       </div>
 
@@ -104,7 +104,7 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
                 </div>
 
                 <Link href={`/products/${producto.id}`} prefetch={false}>
-                  <h3 className="font-amatic text-2xl tracking-wide text-[#4a3c2f] mb-2 h-[60px] overflow-hidden truncate ">
+                  <h3 className="font-bebas text-2xl tracking-wide text-[#4a3c2f] h-[60px] overflow-hidden truncate ">
                     {producto.nombre}
                   </h3>
                 </Link>
