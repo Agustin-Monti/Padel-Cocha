@@ -15,7 +15,6 @@ export default async function OfertasPage() {
   const tiposProductos = await getTiposDeProductos();
 
   console.log("➡️ Productos en oferta:", productos);
-  console.log("➡️ Tipos de productos:", tiposProductos);
 
   return (
     <main>
@@ -24,3 +23,4 @@ export default async function OfertasPage() {
     </main>
   );
 }
+
