@@ -148,8 +148,11 @@
   animation: glow 1.5s infinite;
 }
 
-
+html, body {
+  overflow-x: hidden;
+}
 
 /*BOTON FLOTANTE*/
+
 
 
