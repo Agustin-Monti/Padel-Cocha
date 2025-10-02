@@ -311,7 +311,7 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
         ))}
 
         {/* OFERTA */}
-        {hayOfertas && (
+        {typeof window !== "undefined" && hayOfertas && (
           <Link href="/ofertas" className="bg-red-500 text-white font-bold px-3 py-1 rounded shadow hover:bg-red-600 animate-pulse">
             ¡OFERTA!
           </Link>
@@ -324,3 +324,4 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
   );
 
 };
+
