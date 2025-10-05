@@ -7,7 +7,7 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.NEXT_PUBLIC_MP_ACCESS_TOKEN!,
 });
 
-const baseUrl = "https://d50be3702c52.ngrok-free.app/";
+const baseUrl = "https://padel-cocha.vercel.app/";
 
 // Configuración de Supabase
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -139,3 +139,4 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
+
