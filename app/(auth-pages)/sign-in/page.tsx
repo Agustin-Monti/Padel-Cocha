@@ -6,7 +6,7 @@ import Link from "next/link";
 import { PasswordInput } from "@/components/PasswordInput";
 
 export const metadata: Metadata = {
-  title: "• Punto Padel LF • Iniciar sesión ",
+  title: "• Punto Padel LF • Iniciar sesión",
   description: "Iniciá sesión para acceder a tu cuenta en Punto Padel LF.",
 };
 
@@ -24,7 +24,7 @@ export default function Login({
   }
 
   return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 px-4">
+    <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 px-4">
       <div className="w-full max-w-md space-y-6 bg-white p-8 rounded-2xl shadow-lg">
         <div className="text-center">
           <img
@@ -103,4 +103,3 @@ export default function Login({
     </div>
   );
 }
-
