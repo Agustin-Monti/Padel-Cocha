@@ -114,6 +114,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 external_reference: externalReference,
                 status: "pendiente", // Estado inicial del pago
                 estado_pedido : "En Proceso", // Estado inicial del pedido
+                metodo_pago: "Mercado Pago",
             });
 
 
@@ -139,4 +140,5 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
+
 
