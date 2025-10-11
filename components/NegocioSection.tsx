@@ -29,15 +29,15 @@ const NegocioSection = () => {
       {/* Título */}
       <div className="flex items-center justify-center mb-8">
         <div className="flex items-center gap-2 w-full max-w-[150px]">
-          <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
-          <div className="h-[2px] bg-[#816b4b] flex-1" />
+          <div className="w-2 h-2 bg-gradient-to-r from-blue-800 to-indigo-900 rounded-full" />
+          <div className="h-[2px] bg-gradient-to-r from-blue-800 to-indigo-900 flex-1" />
         </div>
-        <h2 className="text-2xl md:text-3xl font-anton font-bold text-[#816b4b] mx-4 text-center whitespace-nowrap">
-          Conocé nuestros beneficios
+        <h2 className="text-2xl md:text-3xl font-anton font-bold text-[#303ec5] mx-4 text-center whitespace-nowrap">
+          Conocé Nuestros Beneficios
         </h2>
         <div className="flex items-center gap-2 w-full max-w-[150px]">
-          <div className="h-[2px] bg-[#816b4b] flex-1" />
-          <div className="w-2 h-2 bg-[#816b4b] rounded-full" />
+          <div className="h-[2px] bg-gradient-to-r from-blue-800 to-indigo-900 flex-1" />
+          <div className="w-2 h-2 bg-gradient-to-r from-blue-800 to-indigo-900 rounded-full" />
         </div>
       </div>
 
@@ -48,8 +48,8 @@ const NegocioSection = () => {
             key={i}
             className="flex flex-col items-center text-center p-6 rounded-xl bg-white shadow-sm transition-transform hover:scale-105"
           >
-            <div className="w-20 h-20 flex items-center justify-center mb-4 bg-[#f4eee7] rounded-full shadow-inner">
-              <Icon className="w-10 h-10 text-[#816b4b]" />
+            <div className="w-20 h-20 flex items-center justify-center mb-4 bg-gradient-to-r from-blue-800 to-indigo-900 rounded-full shadow-inner">
+              <Icon className="w-10 h-10 text-[#f8f8f8]" />
             </div>
             <h2 className="text-xl font-semibold text-gray-800 mb-2">{title}</h2>
             <p className="text-gray-600">{description}</p>
