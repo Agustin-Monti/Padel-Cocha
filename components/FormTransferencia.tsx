@@ -18,9 +18,11 @@ interface Props {
     codigoPostal: string;
     email: string;
     empresaEnvio: string;
+    envio: number;
   };
   total: number;
   productos: string; // puedes pasar JSON.stringify(carrito) o resumen
+  envio: number;
 }
 
 export default function FormTransferencia({ formData, total, productos }: Props) {
@@ -57,9 +59,9 @@ export default function FormTransferencia({ formData, total, productos }: Props)
       data.append('dni', formData.dni);
       data.append('telefono', formData.telefono);
       data.append('email', formData.email);
-      data.append('direccion', `${formData.direccion}, ${formData.ciudad}, ${formData.provincia}`);
-      data.append('codigo_postal', formData.codigoPostal);
-      data.append('metodo_envio', formData.empresaEnvio || 'Desconocido');
+      data.append('direccion', `${formData.direccion}, ${formData.ciudad}, ${formData.provincia}, ${formData.codigoPostal}`);
+      data.append('metodo_envio', formData.envio.toString());        // ← MONTO
+      data.append('metodo_empresa', formData.empresaEnvio);   
       data.append('total', total.toString());
 
       // 3. Ahora usa productosConTalles (con talle incluido)
