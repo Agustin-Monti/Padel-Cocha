@@ -10,6 +10,7 @@ interface ProductoComprado {
   nombre: string;
   cantidad: number;
   precio_unitario: number;
+  talle?: string;
 }
 
 interface Pedido {
@@ -27,6 +28,9 @@ interface Pedido {
   comprobantes_transferencia?: {
     url_comprobante: string;
   };
+  metodo_envio: string;
+  metodo_empresa: string;
+  created_at?: string;
 }
 
 interface ModalPedidosProps {
@@ -46,7 +50,6 @@ const ModalPedidos: React.FC<ModalPedidosProps> = ({
   const [nuevoStatus, setNuevoStatus] = useState(pedido.status);
   const [trackingNumber, setTrackingNumber] = useState<string | null>(null);
   const [verComprobante, setVerComprobante] = useState(false);
-
 
   if (!isOpen) return null;
 
@@ -85,122 +88,220 @@ const ModalPedidos: React.FC<ModalPedidosProps> = ({
     }
   };
 
+  // Formatear fecha si está disponible
+  const fechaPedido = pedido.created_at 
+    ? new Date(pedido.created_at).toLocaleDateString('es-AR')
+    : 'Fecha no disponible';
+
+  const subtotal = productosComprados.reduce((acc, producto) => 
+    acc + (producto.precio_unitario * producto.cantidad), 0
+  );
+  const costoEnvio = parseFloat(pedido.metodo_envio);
+
   return (
     <>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-        <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-5xl relative overflow-y-auto max-h-[90vh]">
-          <h2 className="text-3xl font-bold text-center mb-8">Detalles del Pedido</h2>
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl relative overflow-hidden border border-gray-200">
+          
+          {/* Header tipo comprobante */}
+          <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white p-1">
+            <div className="flex justify-between items-start">
+              <div>
+                <h1 className="text-2xl font-bold">PUNTO PADEL LF</h1>
+                <p className="text-blue-100 text-sm">Comprobante de Pedido</p>
+              </div>
+              <div className="text-right">
+                <div className="bg-white text-blue-800 px-3 py-1 rounded-lg font-bold text-lg">
+                  #{pedido.id}
+                </div>
+                <p className="text-blue-100 text-sm mt-1">{fechaPedido}</p>
+              </div>
+            </div>
+          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-gray-800">
-            <div><strong>ID Pedido:</strong> {pedido.id}</div>
-            <div><strong>Nombre:</strong> {pedido.nombre_comprador}</div>
-            <div><strong>Email:</strong> {pedido.email_comprador}</div>
-            <div><strong>DNI:</strong> {pedido.dni}</div>
-            <div><strong>Dirección:</strong> {pedido.direccion}</div>
-            <div><strong>Total:</strong> ${pedido.total.toLocaleString()}</div>
-            <div><strong>Método de pago:</strong> {pedido.metodo_pago}</div>
+          <div className="p-1 space-y-6">
+            {/* Información del cliente */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="border border-gray-200 rounded-lg p-1 bg-gray-50">
+                <h3 className="font-bold text-gray-700 mb-1 flex items-center">
+                  <span className="w-2 h-2 bg-blue-600 rounded-full mr-1"></span>
+                  Información del Cliente
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Nombre:</strong> {pedido.nombre_comprador}</div>
+                  <div><strong>Email:</strong> {pedido.email_comprador}</div>
+                  <div><strong>DNI:</strong> {pedido.dni}</div>
+                  <div><strong>Dirección:</strong> {pedido.direccion}</div>
+                </div>
+              </div>
 
-            {pedido.metodo_pago === 'Transferencia Bancaria' ? (
-              <div className="col-span-1 md:col-span-2">
-                <strong>Comprobante:</strong>{' '}
-                {pedido.comprobantes_transferencia?.url_comprobante ? (
-                  <button
-                    onClick={() => setVerComprobante(true)}
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 mt-1 rounded-lg shadow-sm transition"
-                  >
-                    Ver comprobante
-                  </button>
-                ) : (
-                  <span className="text-red-600">No disponible</span>
-                )}
-                <div className="mt-4">
-                  <label className="font-semibold">Estado del pago:</label>
+              <div className="border border-gray-200 rounded-lg p-1 bg-gray-50">
+                <h3 className="font-bold text-gray-700 mb-1 flex items-center">
+                  <span className="w-2 h-2 bg-green-600 rounded-full mr-1"></span>
+                  Detalles del Pago
+                </h3>
+                <div className="space-y-2 text-sm">
+                  <div><strong>Método:</strong> {pedido.metodo_pago}</div>
+                  <div><strong>ID Transacción:</strong> {pedido.id_transaccion}</div>
+                  <div><strong>Status:</strong> 
+                    <span className={`ml-2 px-2 py-1 rounded text-xs ${
+                      pedido.status === 'approved' ? 'bg-green-100 text-green-800' :
+                      pedido.status === 'pendiente' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {pedido.status}
+                    </span>
+                  </div>
+                  {pedido.metodo_pago === 'Transferencia Bancaria' && (
+                    <div>
+                      <button
+                        onClick={() => setVerComprobante(true)}
+                        className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 text-xs rounded transition mt-1"
+                      >
+                        📎 Ver Comprobante
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Información de envío */}
+            <div className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+              <h3 className="font-bold text-gray-700 mb-1 flex items-center">
+                <span className="w-2 h-2 bg-purple-600 rounded-full mr-1"></span>
+                Información de Envío
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div>
+                  <strong>Empresa:</strong> {pedido.metodo_empresa}
+                </div>
+                <div>
+                  <strong>Costo de envío:</strong> ${costoEnvio.toLocaleString()}
+                </div>
+              </div>
+            </div>
+
+            {/* Productos - Estilo tabla */}
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              <div className="bg-gray-800 text-white p-1">
+                <h3 className="font-bold">Productos del Pedido</h3>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="text-left p-1 text-sm font-semibold">Producto</th>
+                      <th className="text-center p-1 text-sm font-semibold">Cantidad</th>
+                      <th className="text-center p-1 text-sm font-semibold">P. Unitario</th>
+                      <th className="text-center p-1 text-sm font-semibold">Subtotal</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {productosComprados.map((producto, index) => (
+                      <tr key={producto.id} className={index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+                        <td className="p-3 text-sm">
+                          <div>
+                            <div className="font-medium">{producto.nombre}</div>
+                            {producto.talle && (
+                              <div className="text-gray-500 text-xs">Talle: {producto.talle}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="p-3 text-sm text-center">{producto.cantidad}</td>
+                        <td className="p-3 text-sm text-center">${producto.precio_unitario.toLocaleString()}</td>
+                        <td className="p-3 text-sm text-center font-semibold">
+                          ${(producto.cantidad * producto.precio_unitario).toLocaleString()}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Totales */}
+            <div className="bg-gray-800 text-white p-4 rounded-lg">
+              <div className="flex justify-between items-center text-lg">
+                <span>Total del Pedido</span>
+                <span className="text-2xl font-bold">${pedido.total.toLocaleString()}</span>
+              </div>
+              <div className="text-gray-300 text-sm mt-2 flex justify-between">
+                <span>Subtotal: ${subtotal.toLocaleString()}</span>
+                <span>Envío: ${costoEnvio.toLocaleString()}</span>
+              </div>
+            </div>
+
+            {/* Controles de estado */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 border border-gray-200 rounded-lg">
+              <div>
+                <label className="block font-semibold text-gray-700 mb-2">
+                  Estado del Pedido
+                </label>
+                <select
+                  value={nuevoEstado}
+                  onChange={(e) => setNuevoEstado(e.target.value)}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="En Proceso">🔄 En Proceso</option>
+                  <option value="Enviado">🚚 Enviado</option>
+                  <option value="Entregado">✅ Entregado</option>
+                  <option value="Cancelado">❌ Cancelado</option>
+                </select>
+              </div>
+
+              {pedido.metodo_pago === 'Transferencia Bancaria' && (
+                <div>
+                  <label className="block font-semibold text-gray-700 mb-2">
+                    Estado del Pago
+                  </label>
                   <select
                     value={nuevoStatus}
                     onChange={(e) => setNuevoStatus(e.target.value)}
-                    className="mt-1 border border-gray-300 p-2 rounded w-full"
+                    className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
-                    <option value="pendiente">Pendiente</option>
-                    <option value="approved">Aprobado</option>
-                    <option value="rechazado">Rechazado</option>
+                    <option value="pendiente">⏳ Pendiente</option>
+                    <option value="approved">✅ Aprobado</option>
+                    <option value="rechazado">❌ Rechazado</option>
                   </select>
                 </div>
-              </div>
-            ) : (
-              <div><strong>ID Transacción:</strong> {pedido.id_transaccion}</div>
-            )}
-          </div>
-
-          <div className="mt-8">
-            <label className="font-semibold">Estado del pedido:</label>
-            <select
-              value={nuevoEstado}
-              onChange={(e) => setNuevoEstado(e.target.value)}
-              className="ml-2 border border-gray-300 p-2 rounded w-full mt-2"
-            >
-              <option value="En Proceso">En Proceso</option>
-              <option value="Enviado">Enviado</option>
-              <option value="Entregado">Entregado</option>
-              <option value="Cancelado">Cancelado</option>
-            </select>
-          </div>
-
-          {nuevoEstado === 'Enviado' && (
-            <div className="mt-4">
-              <label htmlFor="trackingNumber" className="block font-semibold mb-1">
-                Número de Tracking:
-              </label>
-              <input
-                type="text"
-                id="trackingNumber"
-                value={trackingNumber || ''}
-                onChange={(e) => setTrackingNumber(e.target.value)}
-                className="border p-2 rounded w-full"
-                placeholder="Ingresa el número de tracking"
-              />
+              )}
             </div>
-          )}
 
-          <div className="mt-10">
-            <h3 className="font-bold text-lg mb-3">Productos del pedido:</h3>
-            {productosComprados.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {productosComprados.map((producto) => (
-                  <div
-                    key={producto.id}
-                    className="border rounded-xl p-4 bg-gray-50 shadow-sm"
-                  >
-                    <p className="font-medium text-lg">{producto.nombre}</p>
-                    <p className="text-sm text-gray-600">Cantidad: {producto.cantidad}</p>
-                    <p className="text-sm text-gray-600">Precio unitario: ${producto.precio_unitario}</p>
-                    <p className="text-sm text-gray-800 font-semibold">
-                      Subtotal: ${producto.cantidad * producto.precio_unitario}
-                    </p>
-                  </div>
-                ))}
+            {nuevoEstado === 'Enviado' && (
+              <div className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
+                <label className="block font-semibold text-gray-700 mb-2">
+                  📦 Número de Tracking
+                </label>
+                <input
+                  type="text"
+                  value={trackingNumber || ''}
+                  onChange={(e) => setTrackingNumber(e.target.value)}
+                  className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-yellow-500"
+                  placeholder="Ingresa el número de tracking..."
+                />
               </div>
-            ) : (
-              <p className="text-gray-500">No hay productos cargados en este pedido.</p>
             )}
-          </div>
 
-          <p className="mt-6 text-sm text-red-600 bg-red-100 p-2 rounded">
-            ⚠️ Recargá la página después de cambiar el estado del pedido para ver los cambios reflejados.
-          </p>
+            {/* Botones de acción */}
+            <div className="flex justify-end gap-4 pt-4 border-t border-gray-200">
+              <button
+                onClick={onClose}
+                className="px-6 py-3 border border-gray-300 text-white rounded-lg hover:bg-blue-700 transition font-medium"
+              >
+                Cerrar
+              </button>
+              <button
+                onClick={handleActualizarEstado}
+                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition font-medium shadow-md"
+              >
+                💾 Actualizar Estado
+              </button>
+            </div>
 
-          <div className="flex justify-end mt-6 gap-4">
-            <button
-              onClick={onClose}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded-lg"
-            >
-              Cerrar
-            </button>
-            <button
-              onClick={handleActualizarEstado}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg shadow-md"
-            >
-              Actualizar Estado
-            </button>
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm text-blue-700">
+              💡 Los cambios se reflejarán después de actualizar la página
+            </div>
           </div>
         </div>
       </div>
