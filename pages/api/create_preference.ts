@@ -7,7 +7,7 @@ const client = new MercadoPagoConfig({
     accessToken: process.env.NEXT_PUBLIC_MP_ACCESS_TOKEN!,
 });
 
-const baseUrl = "https://padel-cocha.vercel.app/";
+const baseUrl = "https://2e3d27179d20.ngrok-free.app/";
 
 // Configuración de Supabase
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!);
@@ -91,6 +91,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
 
             // ✅ Guardar en Supabase
+            // En create_preference.ts - Corrige el insert en Supabase
             const { error: supabaseError } = await supabase.from("pagos").insert({
                 productos_comprados: JSON.stringify(
                     carrito.map((item: any) => ({
@@ -101,19 +102,20 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         talle: item.talle || null,
                     }))
                 ),
-                producto_id: carrito.map((item: any) => item.id).join(","), // ✅ Guardar como string separado por comas               
+                producto_id: carrito.map((item: any) => item.id), // ✅ Ahora es array, no string
                 nombre_comprador: payer.name,
-                apellido_comprador:payer.surname,
+                apellido_comprador: payer.surname || '', // ✅ Asegura que no sea null
                 email_comprador: payer.email,
-                telefono: payer.phone.number,
-                dni: payer.identification.number,
-                direccion: `${payer.address.street_name}, ${payer.address.zip_code}`,
-                metodo_envio: shipments.cost,
+                telefono: payer.phone?.number || '', // ✅ Maneja posible undefined
+                dni: payer.identification?.number || '', // ✅ Maneja posible undefined
+                direccion: `${payer.address?.street_name || ''}, ${payer.address?.zip_code || ''}`,
+                metodo_envio: shipments.cost.toString(),
+                metodo_empresa: shipments.empresa,
                 total: total,
                 preference_id: result.id,
                 external_reference: externalReference,
-                status: "pendiente", // Estado inicial del pago
-                estado_pedido : "En Proceso", // Estado inicial del pedido
+                status: "pendiente",
+                estado_pedido: "En Proceso",
                 metodo_pago: "Mercado Pago",
             });
 
@@ -140,5 +142,3 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         res.status(405).end(`Method ${req.method} Not Allowed`);
     }
 }
-
-
