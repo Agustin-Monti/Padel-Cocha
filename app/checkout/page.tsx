@@ -287,37 +287,38 @@ export default function CheckoutPage() {
            
 
             const payload = {
-            carrito: carritoConProductos.map((item) => {
-                const producto = item.producto!;
-                const esOferta = producto.oferta_activa && producto.precio_oferta;
-                const precioFinal = esOferta ? producto.precio_oferta : producto.precio;
+                carrito: carritoConProductos.map((item) => {
+                    const producto = item.producto!;
+                    const esOferta = producto.oferta_activa && producto.precio_oferta;
+                    const precioFinal = esOferta ? producto.precio_oferta : producto.precio;
 
-                return {
-                id: item.producto?.id || '',
-                title: producto.nombre,
-                quantity: item.cantidad,
-                unit_price: precioFinal,
-                currency_id: "ARS",
-                picture_url: producto.imagen,
-                talle: item.talle || null,
-                };
-            }),
-            total,
-            payer: {
-                name: formData.nombre,
-                surname: formData.apellido,
-                email: formData.email,
-                phone: { number: formData.telefono },
-                identification: { type: "DNI", number: formData.dni },
-                address: {
-                street_name: `${formData.direccion}, ${formData.ciudad}, ${formData.provincia}`,
-                street_number: formData.piso,
-                zip_code: formData.codigoPostal,
+                    return {
+                    id: item.producto?.id || '',
+                    title: producto.nombre,
+                    quantity: item.cantidad,
+                    unit_price: precioFinal,
+                    currency_id: "ARS",
+                    picture_url: producto.imagen,
+                    talle: item.talle || null,
+                    };
+                }),
+                total,
+                payer: {
+                    name: formData.nombre,
+                    surname: formData.apellido,
+                    email: formData.email,
+                    phone: { number: formData.telefono },
+                    identification: { type: "DNI", number: formData.dni },
+                    address: {
+                    street_name: `${formData.direccion}, ${formData.ciudad}, ${formData.provincia}`,
+                    street_number: formData.piso,
+                    zip_code: formData.codigoPostal,
+                    },
                 },
-            },
-            shipments: {
-                cost: formData.envio,
-            },
+                shipments: {
+                    cost: formData.envio,
+                    empresa: formData.empresaEnvio,
+                },
             };
 
             console.log("Datos enviados a Mercado Pago:", payload);
@@ -833,9 +834,9 @@ export default function CheckoutPage() {
                                 {/* Métodos de envío */}
                                 <h2 className="text-xl font-semibold text-gray-800">🚚 Métodos de envío disponibles</h2>
                                 <div className="space-y-4">
-                                    {tarifasEnvio.length > 0 || subtotal >= 80000 ? (
+                                    {tarifasEnvio.length > 0 || subtotal >= 200000 ? (
                                         <div className="space-y-4">
-                                            {subtotal >= 80000 && (
+                                            {subtotal >= 200000 && (
                                             <label
                                                 htmlFor="envio-gratis"
                                                 className={`flex items-center justify-between p-4 border rounded-xl shadow-sm cursor-pointer transition hover:shadow-md ${
@@ -852,7 +853,7 @@ export default function CheckoutPage() {
                                                 />
                                                 <div>
                                                     <p className="font-medium text-gray-800">Envío Gratis</p>
-                                                    <p className="text-gray-600 text-sm">¡Por superar los $80.000!</p>
+                                                    <p className="text-gray-600 text-sm">¡Por superar los $200.000!</p>
                                                 </div>
                                                 </div>
                                                 <input
@@ -1010,7 +1011,7 @@ export default function CheckoutPage() {
                                         )}
                                         {preferenceId && <Wallet initialization={{ preferenceId }} />}
 
-                                        <FormTransferencia formData={formData} total={total} productos={JSON.stringify(resumenProductos)} />
+                                        <FormTransferencia formData={formData} total={total} productos={JSON.stringify(resumenProductos)} envio={formData.envio}/>
 
                                     </div>
                                 )}
