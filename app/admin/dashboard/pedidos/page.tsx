@@ -24,6 +24,8 @@ interface Pedido {
   productos?: Producto[]; // Productos asociados al pedido
   metodo_pago?: string;
   url_comprobante?: string;
+  metodo_envio: string;
+  metodo_empresa: string;
 }
 
 export default function PedidosPage() {
