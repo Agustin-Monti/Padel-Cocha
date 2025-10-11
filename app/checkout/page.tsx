@@ -10,8 +10,6 @@ import FormTransferencia from '@/components/FormTransferencia';
 import AlertaStockPago from '@/components/AlertaStockPago';
 
 
-
-
 interface CarritoItem {
     id: string;
     cantidad: number;
