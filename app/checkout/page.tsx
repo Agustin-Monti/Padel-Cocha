@@ -1001,7 +1001,7 @@ export default function CheckoutPage() {
                                                 "Creando preferencia..."
                                             ) : (
                                                 <>
-                                                <img src="/mercado-pago.svg" alt="Mercado Pago" className="w-9 h-6" />
+                                                <img src="/mercado_pago.svg" alt="Mercado Pago" className="w-15 h-12" />
                                                 Pagar con Mercado Pago
                                                 </>
                                             )}
@@ -1163,3 +1163,4 @@ export default function CheckoutPage() {
             
     );
 }
+
