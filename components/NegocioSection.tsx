@@ -51,7 +51,7 @@ const NegocioSection = () => {
       <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-amber-500/5 to-transparent rounded-full translate-x-1/3 translate-y-1/3" />
       
-      {/* Patrón de puntos */}
+      {/* Patrón */}
       <div className="absolute inset-0 opacity-10">
         <div className="absolute top-20 left-10 w-2 h-2 bg-blue-500 rounded-full" />
         <div className="absolute top-40 right-20 w-2 h-2 bg-purple-500 rounded-full" />
@@ -207,3 +207,4 @@ const NegocioSection = () => {
 };
 
 export default NegocioSection;
+
