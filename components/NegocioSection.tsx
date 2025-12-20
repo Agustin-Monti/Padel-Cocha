@@ -47,7 +47,7 @@ const NegocioSection = () => {
 
   return (
     <div className="w-full px-4 md:px-8 lg:px-16 py-16 md:py-20 bg-gradient-to-br from-gray-50 to-white relative overflow-hidden">
-      {/* Elementos decorativos de fondo */}
+      {/* Elementos decorativos */}
       <div className="absolute top-0 left-0 w-64 h-64 bg-gradient-to-br from-blue-500/5 to-transparent rounded-full -translate-x-1/2 -translate-y-1/2" />
       <div className="absolute bottom-0 right-0 w-96 h-96 bg-gradient-to-tl from-amber-500/5 to-transparent rounded-full translate-x-1/3 translate-y-1/3" />
       
@@ -207,4 +207,5 @@ const NegocioSection = () => {
 };
 
 export default NegocioSection;
+
 
