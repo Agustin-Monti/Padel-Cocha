@@ -96,9 +96,6 @@ export default function ProductoOfertasClient({ productos, tiposProductos }: Pro
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="text-center md:text-left">
               <div className="flex items-center justify-center md:justify-start gap-3 mb-4">
-                <div className="p-3 bg-white/20 backdrop-blur-sm rounded-full">
-                  <Flame size={32} />
-                </div>
                 <h1 className="text-3xl md:text-4xl font-bold">🔥 OFERTAS ESPECIALES</h1>
               </div>
               <p className="text-lg opacity-90 max-w-2xl">
@@ -268,7 +265,7 @@ export default function ProductoOfertasClient({ productos, tiposProductos }: Pro
                           </div>
 
                           {/* Ahorro */}
-                          <div className="mb-4 p-3 bg-green-50 rounded-lg">
+                          <div className="mb-1 p-1 bg-green-50 rounded-lg">
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2">
                                 <Zap size={16} className="text-green-600" />
@@ -279,28 +276,10 @@ export default function ProductoOfertasClient({ productos, tiposProductos }: Pro
                               </span>
                             </div>
                           </div>
-
-                          {/* Cuotas */}
-                          <div className="border-t border-gray-100 pt-4">
-                            <div className="flex items-center justify-between">
-                              <div>
-                                <p className="text-sm text-gray-600">6 cuotas sin interés</p>
-                                <p className="text-lg font-bold text-gray-900">
-                                  ${(producto.precio_oferta / 6).toLocaleString('es-ES', { maximumFractionDigits: 0 })}/mes
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <p className="text-sm text-green-600 font-medium">⭐ Transferencia:</p>
-                                <p className="text-lg font-bold text-green-700">
-                                  ${(producto.precio_oferta * 0.95).toLocaleString('es-ES')}
-                                </p>
-                              </div>
-                            </div>
-                          </div>
                         </div>
 
                         {/* Botón */}
-                        <div className="px-6 pb-6">
+                        <div className="px-2 pb-2">
                           <Link href={`/products/${producto.id}`}>
                             <button className="w-full bg-gradient-to-r from-orange-500 to-red-500 text-white py-3 rounded-xl font-bold text-lg hover:shadow-lg hover:scale-[1.02] transition-all duration-300">
                               VER OFERTA
