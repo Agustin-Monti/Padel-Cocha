@@ -39,11 +39,11 @@ export default function FormularioPaleta({ product, onChange }: Props) {
         <Input name="acabado" value={product.acabado || ""} onChange={onChange} required />
       </div>
       <div>
-        <Label>Potencia</Label>
+        <Label>Potencia (Numero de 1 a 10)</Label>
         <Input type="number" name="potencia" value={product.potencia || ""} onChange={onChange} required />
       </div>
       <div>
-        <Label>Control</Label>
+        <Label>Control (Numero de 1 a 10)</Label>
         <Input type="number" name="control" value={product.control || ""} onChange={onChange} required />
       </div>
       <div>
@@ -53,3 +53,4 @@ export default function FormularioPaleta({ product, onChange }: Props) {
     </div>
   );
 }
+
