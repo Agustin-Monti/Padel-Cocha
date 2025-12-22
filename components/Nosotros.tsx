@@ -33,7 +33,7 @@ export default function Nosotros() {
                 <div className="relative">
                   <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden relative ring-4 ring-white shadow-xl">
                     <Image
-                      src="/propietario.png"
+                      src="/cocha.jpeg"
                       alt="Luciano Forti - Fundador"
                       fill
                       sizes="(max-width: 768px) 128px, 144px"
@@ -115,3 +115,4 @@ export default function Nosotros() {
     </section>
   );
 }
+
