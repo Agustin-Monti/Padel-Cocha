@@ -7,7 +7,7 @@ import Image from "next/image";
 
 export default function Footer() {
   return (
-    <footer className="w-full bg-gray-100 text-gray-700 mt-16 border-t">
+    <footer className="w-full bg-gradient-to-r from-blue-800 to-indigo-900 mt-16 border-t text-white">
       <div className="max-w-6xl mx-auto px-6 py-12 grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
         {/* Logo */}
         <div className="flex items-center space-x-2">
@@ -91,7 +91,7 @@ export default function Footer() {
       </div>
 
       {/* Pie de página */}
-      <div className="border-t text-center py-4 text-xs text-gray-500">
+      <div className="border-t text-center py-4 text-xs text-white">
         © 2025 <span className="mx-1">•</span><span className="font-semibold">Punto Padel LF</span><span className="mx-1">•</span> Todos los derechos reservados.
       </div>
     </footer>
