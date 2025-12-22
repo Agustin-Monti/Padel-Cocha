@@ -222,7 +222,7 @@ export default function CreateProductPage() {
         <button
           type="button"
           onClick={() => router.push("/admin/dashboard/productos")}
-          className="flex items-center gap-2 text-blue-600"
+          className="flex items-center gap-2 text-black"
         >
           <ArrowLeft size={20} />
           <span>Volver a Productos</span>
@@ -421,3 +421,4 @@ export default function CreateProductPage() {
     </form>
   );
 }
+
