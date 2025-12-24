@@ -13,7 +13,10 @@ type Tipos = {
     id: string;
     categoria_id: string;
     nombre: string;
-    
+    categorias?: {  // Esto es un OBJETO, no array
+        id: string;
+        nombre: string;
+    };
 };
   
 
@@ -26,6 +29,9 @@ export default function Tipos() {
   useEffect(() => {
     const obtenerTipos = async () => {
       const data = await fetchTipos();
+      console.log('Datos recibidos:', data); // Agrega esto para ver la estructura
+      console.log('Primer tipo:', data[0]);
+      console.log('Categorías del primer tipo:', data[0]?.categorias);
       setTipos(data);
     };
 
@@ -135,20 +141,27 @@ export default function Tipos() {
 
   const columns = [
     {
-      name: 'ID',
-      selector: (row: Tipos) => row.id,
-      sortable: true,
+        name: 'ID',
+        selector: (row: Tipos) => row.id,
+        sortable: true,
     },
     {
-      name: 'Categoría',
-      selector: (row: Tipos) => row.categoria_id,
-      sortable: true,
+        name: 'Categoría',
+        selector: (row: Tipos) => {
+            // Accede al nombre de la categoría directamente desde el objeto
+            if (row.categorias && row.categorias.nombre) {
+                return row.categorias.nombre;
+            }
+            // Si no hay categoría, muestra el ID como fallback
+            return `ID: ${row.categoria_id}`;
+        },
+        sortable: true,
     },
     {
         name: 'Nombre',
         selector: (row: Tipos) => row.nombre,
         sortable: true,
-      },
+    },
     {
       name: "Acciones",
       cell: (row: Tipos) => (
