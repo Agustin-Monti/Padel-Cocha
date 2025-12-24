@@ -66,10 +66,18 @@ export const getCategorias = async () => {
 export const fetchTipos = async () => {
   const supabase = createClient();
 
-  // Obtener los tipos de productos con solo el categoria_id
+  // Obtener los tipos de productos con JOIN a categorías
   const { data: tipos, error: tiposError } = await supabase
     .from('tipo_productos')
-    .select('id, nombre, categoria_id')  // No necesitamos incluir 'categorias'
+    .select(`
+      id, 
+      nombre, 
+      categoria_id,
+      categorias (
+        id,
+        nombre
+      )
+    `)
     .order('nombre', { ascending: true });
 
   if (tiposError) {
@@ -77,7 +85,23 @@ export const fetchTipos = async () => {
     return [];
   }
 
-  return tipos;  // No mapeamos nada adicional aquí, ya que solo necesitamos 'categoria_id'
+  // Transformar los datos para normalizar la estructura
+  const tiposTransformados = tipos.map(tipo => {
+    // Si categorias es un array, toma el primer elemento
+    // Si es un objeto, úsalo directamente
+    const categoriaObj = Array.isArray(tipo.categorias) 
+      ? tipo.categorias[0] 
+      : tipo.categorias;
+
+    return {
+      id: tipo.id,
+      nombre: tipo.nombre,
+      categoria_id: tipo.categoria_id,
+      categorias: categoriaObj || null
+    };
+  });
+
+  return tiposTransformados;
 };
 
 
@@ -87,12 +111,18 @@ export async function getTiposById(id: string) {
   const supabase = createClient();
   const { data, error } = await supabase
     .from("tipo_productos")
-    .select("*")
+    .select(`
+      *,
+      categorias (
+        id,
+        nombre
+      )
+    `)
     .eq("id", id)
     .single();
 
   if (error) {
-    console.error("Error fetching categorias:", error);
+    console.error("Error fetching tipos:", error);
     return null;
   }
 
