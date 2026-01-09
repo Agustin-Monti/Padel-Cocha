@@ -12,9 +12,8 @@ import GaleriaModal from '@/components/GaleriaModal';
 import ModalOferta from "@/components/ModalOferta";
 import { XCircle, AlertTriangle, CheckCircle } from "lucide-react";
 
-
 type Producto = {
-  id: string;
+  id: number; // CAMBIADO: de string a number
   nombre: string;
   precio: number;
   stock: number;
@@ -36,12 +35,11 @@ export default function Productos() {
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [galleryModalOpen, setGalleryModalOpen] = useState(false);
   const [ofertaModalOpen, setOfertaModalOpen] = useState(false);
-  const [productoId, setProductoId] = useState<string | null>(null);
+  const [productoId, setProductoId] = useState<number | null>(null); // CAMBIADO: de string a number
   const [productoDetalles, setProductoDetalles] = useState<Producto | null>(null);
-  const [precioBase, setPrecioBase] = useState<number>(0); // Nuevo estado para el precio base
+  const [precioBase, setPrecioBase] = useState<number>(0);
   const [ofertaActiva, setOfertaActiva] = useState<boolean>(false);
   const [precioOferta, setPrecioOferta] = useState<number>(0);
-
 
   useEffect(() => {
     const obtenerProductos = async () => {
@@ -52,18 +50,22 @@ export default function Productos() {
     obtenerProductos();
   }, []);
 
-  const openEditModal = async (id: string) => {
+  // CORREGIDO: Acepta number
+  const openEditModal = async (id: number) => {
     try {
       setProductoId(id);
       setEditModalOpen(true);
-
-      const data = await getProductoById(id);
-      setProductoDetalles(data);
+      
+      // Convertir a string para getProductoById si espera string
+      const data = await getProductoById(String(id));
+      setProductoDetalles({
+        ...data,
+        id: Number(data.id) // Asegurar que id sea number
+      });
     } catch (error) {
       console.error('Error al obtener el producto:', error);
     }
   };
-
 
   const closeEditModal = () => {
     setEditModalOpen(false);
@@ -71,7 +73,8 @@ export default function Productos() {
     setProductoDetalles(null);
   };
 
-  const openGalleryModal = (id: string) => {
+  // CORREGIDO: Acepta number
+  const openGalleryModal = (id: number) => {
     setProductoId(id);
     setGalleryModalOpen(true);
   };
@@ -81,19 +84,20 @@ export default function Productos() {
     setProductoId(null);
   };
 
-  const openOfertaModal = async (id: string) => {
+  // CORREGIDO: Acepta number
+  const openOfertaModal = async (id: number) => {
     try {
       setProductoId(id);
-      const producto = await getProductoById(id); // Obtener detalles del producto
-      setPrecioBase(producto.precio); // Establecer el precio base
+      // Convertir a string si es necesario
+      const producto = await getProductoById(String(id));
+      setPrecioBase(producto.precio);
 
-      // Si el producto tiene una oferta activa, establecer los valores
       if (producto.oferta_activa && producto.precio_oferta) {
         setOfertaActiva(true);
         setPrecioOferta(producto.precio_oferta);
       } else {
         setOfertaActiva(false);
-        setPrecioOferta(0); // Resetear precio oferta si no hay
+        setPrecioOferta(0);
       }
 
       setOfertaModalOpen(true);
@@ -105,12 +109,13 @@ export default function Productos() {
   const closeOfertaModal = () => {
     setOfertaModalOpen(false);
     setProductoId(null);
-    setPrecioBase(0); // Limpiar el precio base
+    setPrecioBase(0);
   };
 
-  const handleValoradoToggle = async (id: string, nuevoValor: boolean) => {
+  // CORREGIDO: Acepta number
+  const handleValoradoToggle = async (id: number, nuevoValor: boolean) => {
     try {
-      await guardarValorado(id, nuevoValor);
+      await guardarValorado(String(id), nuevoValor);
       const actualizados = await fetchProductos();
       setProductos(actualizados);
 
@@ -130,11 +135,10 @@ export default function Productos() {
     }
   };
 
-
   const handleSubmitOferta = async (oferta: { oferta_activa: boolean; precio_oferta: number }) => {
     try {
       if (productoId) {
-          await guardarOferta(productoId, oferta); // Guardar la oferta
+        await guardarOferta(String(productoId), oferta);
         Swal.fire({
           icon: 'success',
           title: '¡Éxito!',
@@ -142,7 +146,7 @@ export default function Productos() {
           timer: 2000,
           showConfirmButton: false,
         }).then(() => {
-          window.location.reload(); // Recargar la página después de la alerta
+          window.location.reload();
         });
         closeOfertaModal();
       }
@@ -177,7 +181,8 @@ export default function Productos() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  // CORREGIDO: Acepta number
+  const handleDelete = async (id: number) => {
     try {
       const result = await Swal.fire({
         title: '¿Estás seguro?',
@@ -294,35 +299,35 @@ export default function Productos() {
       cell: (row: Producto) => (
         <div className="flex gap-2">
           <button
-            onClick={() => openEditModal(row.id)}
+            onClick={() => openEditModal(row.id)} // row.id es number
             className="bg-blue-500 hover:bg-blue-600 text-white p-1 rounded-md shadow w-8 h-8 flex items-center justify-center"
             title="Editar"
           >
             <PencilIcon className="h-5 w-5" />
           </button>
           <button
-            onClick={() => handleDelete(row.id)}
+            onClick={() => handleDelete(row.id)} // row.id es number
             className="bg-red-500 hover:bg-red-600 text-white p-1 rounded-md shadow w-8 h-8 flex items-center justify-center"
             title="Eliminar"
           >
             <TrashIcon className="h-4 w-4" />
           </button>
           <button
-            onClick={() => openGalleryModal(row.id)}
+            onClick={() => openGalleryModal(row.id)} // row.id es number
             className="bg-green-500 hover:bg-green-600 text-white p-1 rounded-md shadow w-8 h-8 flex items-center justify-center"
             title="Ver Galería"
           >
             <PhotoIcon className="h-5 w-5" />
           </button>
           <button
-            onClick={() => openOfertaModal(row.id)}
+            onClick={() => openOfertaModal(row.id)} // row.id es number
             className="bg-yellow-400 hover:bg-yellow-500 text-white p-1 rounded-md shadow w-8 h-8 flex items-center justify-center"
             title="Ofertas"
           >
             <BuildingStorefrontIcon className="h-5 w-5" />
           </button>
           <button
-            onClick={() => handleValoradoToggle(row.id, !row.valorado)}
+            onClick={() => handleValoradoToggle(row.id, !row.valorado)} // row.id es number
             className={`${
               row.valorado ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-400 hover:bg-gray-500'
             } text-white p-1 rounded-md shadow w-8 h-8 flex items-center justify-center`}
@@ -330,7 +335,6 @@ export default function Productos() {
           >
             ⭐
           </button>
-
         </div>
       ),
     },
@@ -371,11 +375,10 @@ export default function Productos() {
       style: {
         borderTop: '1px solid #e5e7eb',
         paddingTop: '12px',
-        paddingBottom: '12px',
+        paddingBottom: '12html',
       },
     },
   };
-
 
   return (
     <div>
@@ -396,11 +399,10 @@ export default function Productos() {
         customStyles={customStyles}
       />
 
-
       <EditarProducto
         isOpen={editModalOpen}
         onClose={closeEditModal}
-        productoId={productoId}
+        productoId={productoId ? String(productoId) : null} // Convertir a string
         productoDetalles={productoDetalles}
         onSave={handleSave}
       />
@@ -408,16 +410,16 @@ export default function Productos() {
       <GaleriaModal
         isOpen={galleryModalOpen}
         onClose={closeGalleryModal}
-        productoId={productoId!}
+        productoId={productoId ? String(productoId) : ''} // Convertir a string
       />
 
       <ModalOferta
         isOpen={ofertaModalOpen}
         onClose={closeOfertaModal}
-        productoId={productoId}
-        onSubmit={handleSubmitOferta} // Pasar la función onSubmit
-        precioBase={precioBase} // Pasar el precio base
-        ofertaActiva={ofertaActiva}  // Pasar la oferta activa
+        productoId={productoId ? String(productoId) : null} // Convertir a string
+        onSubmit={handleSubmitOferta}
+        precioBase={precioBase}
+        ofertaActiva={ofertaActiva}
         precioOferta={precioOferta}
       />
     </div>
