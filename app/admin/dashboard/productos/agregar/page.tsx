@@ -350,7 +350,7 @@ export default function CreateProductPage() {
       <div className="mb-6">
         <Label>Imagen</Label>
         <div className="flex gap-4 items-center">
-          <label className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition">
+          <label className="bg-blue-600 text-white px-4 py-2 rounded cursor-pointer hover:bg-blue-700 transition flex-shrink-0">
             Seleccionar Imagen
             <input
               type="file"
@@ -360,11 +360,14 @@ export default function CreateProductPage() {
             />
           </label>
           {previewUrl && (
-            <img
-              src={previewUrl}
-              className="w-24 h-24 object-cover rounded"
-              alt="Vista previa"
-            />
+            <div className="relative w-32 h-32 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+              <img
+                src={previewUrl}
+                className="max-w-full max-h-full object-contain p-1"
+                alt="Vista previa"
+                style={{ maxWidth: '100%', maxHeight: '100%' }}
+              />
+            </div>
           )}
         </div>
       </div>
@@ -421,4 +424,5 @@ export default function CreateProductPage() {
     </form>
   );
 }
+
 
