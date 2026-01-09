@@ -294,10 +294,10 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
             {producto.galeria.map((img, i) => (
               <div
                 key={i}
-                className="w-20 h-20 rounded-xl border border-gray-200 shadow-sm overflow-hidden cursor-pointer hover:shadow-md transition"
+                className="w-28 h-28 rounded-xl border-2 border-gray-200 shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-300"
                 onClick={() => setImagenPrincipal(img.imagen_galeria)}
               >
-                <img src={img.imagen_galeria} alt={`Img ${i}`} className="w-full h-full object-cover" />
+                <img src={img.imagen_galeria} alt={`Img ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
               </div>
             ))}
           </div>
@@ -323,7 +323,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
             <img
               src={imagenPrincipal || producto.imagen}
               alt={producto.nombre}
-              className="w-full h-auto object-cover rounded-xl cursor-pointer hover:brightness-90 transition"
+              className="max-w-full max-h-[850px] object-contain rounded-lg cursor-zoom-in hover:opacity-95 transition"
               onClick={() => setShowModalGaleria(true)}
             />
           </div>
@@ -746,3 +746,4 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     </div>
   );
 }
+
