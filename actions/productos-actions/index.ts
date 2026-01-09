@@ -305,24 +305,70 @@ export async function guardarEdit(e: FormData) {
 
 // Guardar Edit
 
-export async function eliminarProductoById(productoId: string): Promise<boolean> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL!;
+export async function eliminarProductoById(productoId: string | number): Promise<boolean> {
+  console.log('🔨 eliminarProductoById llamado con:', productoId);
+  
   try {
-    const res = await fetch(`${baseUrl}/api/eliminar-producto`, {
+    // Convertir a string
+    const idString = String(productoId).trim();
+    
+    // Usar localhost directamente para evitar problemas
+    const baseUrl = 'http://localhost:3000';
+    const apiUrl = `${baseUrl}/api/eliminar-producto-id`;
+    
+    console.log('🌐 Llamando a:', apiUrl);
+    console.log('📤 Enviando:', { productoId: idString });
+
+    // Hacer la solicitud
+    const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productoId }),
+      headers: { 
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ productoId: idString }),
     });
 
-    if (!res.ok) {
-      const data = await res.json();
-      throw new Error(data.error || 'Error desconocido');
+    console.log('📡 Status:', response.status);
+    console.log('📡 OK?', response.ok);
+
+    // Leer como texto primero
+    const responseText = await response.text();
+    console.log('📦 Respuesta texto:', responseText);
+
+    // Si la respuesta está vacía
+    if (!responseText) {
+      console.error('❌ Respuesta vacía del servidor');
+      throw new Error('El servidor respondió con una respuesta vacía');
     }
 
+    // Intentar parsear JSON
+    let data;
+    try {
+      data = JSON.parse(responseText);
+      console.log('📦 JSON parseado:', data);
+    } catch (jsonError) {
+      console.error('❌ Error parseando JSON:', jsonError);
+      console.error('❌ Texto recibido:', responseText);
+      
+      // Si es un error 500, podría ser HTML
+      if (response.status >= 500) {
+        throw new Error('Error interno del servidor (500)');
+      }
+      
+      throw new Error('Respuesta inválida del servidor');
+    }
+
+    // Verificar éxito
+    if (!response.ok || data.success === false) {
+      throw new Error(data?.error || 'Error al eliminar producto');
+    }
+
+    console.log('✅ Producto eliminado exitosamente');
     return true;
-  } catch (error) {
-    console.error('❌ Error en eliminarProductoById:', error);
-    return false;
+    
+  } catch (error: any) {
+    console.error('❌ Error en eliminarProductoById:', error.message);
+    throw error;
   }
 }
 
@@ -562,4 +608,5 @@ export const buscarProductosPorNombre = async (
 
 
  
+
 
