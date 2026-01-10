@@ -98,7 +98,7 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
                     <img
                       src={producto.imagen}
                       alt={producto.nombre}
-                      className="w-full h-[300px] object-cover rounded-2xl mb-4 hover:scale-105 transition-transform duration-300"
+                      className="w-full h-[300px] object-contain rounded-2xl mb-4 hover:scale-105 transition-transform duration-300"
                     />
                   </Link>
                 </div>
@@ -148,3 +148,4 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
     </div>
   );
 }
+
