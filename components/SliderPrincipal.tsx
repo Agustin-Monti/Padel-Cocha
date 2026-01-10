@@ -22,8 +22,8 @@ export const SliderPrincipal = () => {
       type: "video" as const,
       videoSrcDesktop: "/video-promocional-desktop.mp4", // 2000x500 - Horizontal
       videoSrcMobile: "/video-promocional-mobile.mp4",   // 1080x1920 - Vertical con bordes
-      posterDesktop: "/video-poster-desktop.jpg",
-      posterMobile: "/video-poster-mobile.jpg",
+      posterDesktop: "/video-poster-desktop.png",
+      posterMobile: "/video-poster-mobile.png",
       title: "",
       link: "",
     },
@@ -271,9 +271,11 @@ export const SliderPrincipal = () => {
                       <div className="relative w-full h-full flex items-center justify-center">
                         <video
                           ref={videoRefMobile}
-                          className="w-full h-full object-cover"
+                          className="absolute inset-0 w-full h-full object-cover"
                           style={{
-                            objectPosition: 'center 45%', // Ajusta esto según tu diseño
+                            // Ajusta este valor según necesites
+                            // Valores posibles: 'center 10%', 'center 20%', 'center 30%', etc.
+                            objectPosition: 'center 45%', // Para subir el contenido
                           }}
                           poster={slide.posterMobile}
                           muted
