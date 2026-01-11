@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useFavoritos } from "@/context/FavoritosContext";
-import { Heart, CheckCircle, AlertTriangle, XCircle } from "lucide-react";
+import { Heart, CheckCircle, AlertTriangle, XCircle, MessageCircle } from "lucide-react";
 import HeartBurst from "@/components/HeartBurst";
 import { motion } from "framer-motion";
 import Carrito from "@/components/Carrito";
@@ -12,8 +12,6 @@ import Slider from "react-slick";
 import "slick-carousel/slick/slick.css";
 import "slick-carousel/slick/slick-theme.css";
 import Link from 'next/link';
-
-
 
 interface Producto {
   id: string;
@@ -48,7 +46,6 @@ interface Producto {
   largo : string;
   textura : string;
   color : string;
-
 }
 
 interface ProductoRelacionado {
@@ -77,9 +74,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   const [marcaNombre, setMarcaNombre] = useState<string | null>(null);
   const [talleSeleccionado, setTalleSeleccionado] = useState<string | null>(null);
   const [tallesDisponibles, setTallesDisponibles] = useState<Record<string, number>>({});
-
-
-  
 
   const router = useRouter();
   const supabase = createClient();
@@ -152,73 +146,33 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     }
   }, [categoriaNombre, producto.talle]);
 
-
-  const handleIncrementarCantidad = () => {
-    if (
-      (categoriaNombre?.toLowerCase() === "indumentaria" ||
-      categoriaNombre?.toLowerCase() === "zapatillas") &&
-      talleSeleccionado
-    ) {
-      const maxCantidad = tallesDisponibles[talleSeleccionado];
-      setCantidad(prev => Math.min(prev + 1, maxCantidad));
-    } else {
-      setCantidad(prev => Math.min(prev + 1, producto.stock));
-    }
+  // Función para generar mensaje de WhatsApp
+  const generarMensajeWhatsApp = () => {
+    const mensaje = `¡Hola! Estoy interesado/a en el producto:\n\n` +
+      `*${producto.nombre}*\n` +
+      (marcaNombre ? `Marca: ${marcaNombre}\n` : '') +
+      (producto.oferta_activa ? 
+        `Precio: $${producto.precio_oferta.toLocaleString()} (Oferta)\n` : 
+        `Precio: $${producto.precio.toLocaleString()}\n`) +
+      `\nQuería consultar:\n` +
+      `✅ Disponibilidad del producto\n` +
+      (categoriaNombre?.toLowerCase() === "indumentaria" || 
+       categoriaNombre?.toLowerCase() === "zapatillas" ? 
+       `✅ Talle: ${talleSeleccionado || 'por consultar'}\n` : '') +
+      `✅ Opciones de envío y pago\n` +
+      `\nPodrías darme más información? Gracias!`;
+    
+    return encodeURIComponent(mensaje);
   };
 
+  // Número de WhatsApp (reemplaza con tu número real)
+  const whatsappNumber = "5493445532916"; // Formato internacional sin + o espacios
 
-
-  const handleAñadirAlCarrito = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return console.error('Usuario no autenticado');
-
-    // Validar si necesita talle
-    const requiereTalle = 
-      categoriaNombre?.toLowerCase() === "indumentaria" ||
-      categoriaNombre?.toLowerCase() === "zapatillas";
-
-    if (requiereTalle && !talleSeleccionado) {
-      alert("Por favor, seleccioná un talle antes de añadir al carrito.");
-      return;
-    }
-
-    const { data: existingItem, error: fetchError } = await supabase
-      .from('carrito')
-      .select('id, cantidad')
-      .eq('user_id', user.id)
-      .eq('producto_id', producto.id)
-      .eq('talle', requiereTalle ? talleSeleccionado : null)
-      .single();
-
-    if (fetchError && fetchError.code !== 'PGRST116') return console.error('Error buscando en carrito:', fetchError);
-
-    if (existingItem) {
-      const { error: updateError } = await supabase
-        .from('carrito')
-        .update({
-          cantidad: existingItem.cantidad + cantidad,
-          ...(requiereTalle && talleSeleccionado && { talle: talleSeleccionado }),
-        })
-        .eq('id', existingItem.id);
-      if (updateError) return console.error('Error actualizando carrito:', updateError);
-    } else {
-      const nuevoItem = {
-        user_id: user.id,
-        producto_id: producto.id,
-        cantidad,
-        ...(requiereTalle && talleSeleccionado && { talle: talleSeleccionado }),
-      };
-
-      const { error: insertError } = await supabase
-        .from('carrito')
-        .insert([nuevoItem]);
-      if (insertError) return console.error('Error insertando en carrito:', insertError);
-    }
-
-    setCarritoModificado((prev) => !prev);
-    setIsCarritoOpen(true);
+  const handleWhatsAppClick = () => {
+    const mensaje = generarMensajeWhatsApp();
+    const url = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+    window.open(url, '_blank');
   };
-
 
   const handleToggleFavorito = async () => {
     if (!esFavorito(producto.id)) {
@@ -232,6 +186,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       await addFavorito(producto.id);
     }
   };
+
 
   const calcularDescuento = (precioOriginal: number, precioOferta: number) =>
     Math.round(((precioOriginal - precioOferta) / precioOriginal) * 100);
@@ -266,7 +221,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   );
 
   const BarraEspecificacion = ({ label, value }: { label: string; value: number }) => {
-    const porcentaje = Math.min(value * 10, 100); // asegura máximo 100%
+    const porcentaje = Math.min(value * 10, 100);
 
     return (
       <div className="bg-white rounded-2xl shadow p-4 border border-gray-200">
@@ -281,8 +236,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       </div>
     );
   };
-
-
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -327,9 +280,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               onClick={() => setShowModalGaleria(true)}
             />
           </div>
-
-
-          
 
           {/* Detalles */}
           <div className="w-full lg:w-1/3 mt-8 lg:mt-0">
@@ -425,32 +375,30 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-
-            {/* Cantidad y carrito */}
+            {/* Marca */}
             {marcaNombre && (
               <div className="mt-4 text-lg font-semibold text-gray-700">
                 Marca: <span className="text-gray-900">{marcaNombre}</span>
               </div>
             )}
 
+            {/* Selección de talle (solo para indumentaria y zapatillas) */}
             {(categoriaNombre?.toLowerCase() === "indumentaria" || 
               categoriaNombre?.toLowerCase() === "zapatillas") && (
               <div className="mt-6">
-                <h3 className="text-md font-medium text-gray-800 mb-2">Seleccioná un talle</h3>
+                <h3 className="text-md font-medium text-gray-800 mb-2">Consultar disponibilidad en talle:</h3>
                 <div className="flex flex-wrap gap-2">
                   {Object.entries(tallesDisponibles).map(([talle, cantidad]) => (
                     <button
                       key={talle}
-                      disabled={cantidad === 0}
                       onClick={() => setTalleSeleccionado(talle)}
                       className={`
                         w-12 h-12 px-2 py-2 border text-sm font-medium
                         flex items-center justify-center
                         transition-colors duration-200
                         ${talleSeleccionado === talle ? "bg-black text-white border-black" : "bg-white text-gray-700 border-gray-300"}
-                        ${cantidad === 0 ? "opacity-50 cursor-not-allowed line-through" : "hover:border-gray-500"}
+                        hover:border-gray-500
                       `}
-                      title={cantidad === 0 ? "Sin stock" : `${cantidad} disponibles`}
                     >
                       {talle}
                     </button>
@@ -459,7 +407,8 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-            {/* Cantidad y carrito */}
+            {/* Sección comentada: Cantidad y carrito */}
+            {/*
             <div className="mt-8">
               <h3 className="text-md font-medium text-gray-800 mb-2">Cantidad</h3>
               <div className="flex items-center space-x-4 mb-4">
@@ -505,6 +454,28 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                     : categoriaNombre?.toLowerCase() === "indumentaria y calzado" && tallesDisponibles[talleSeleccionado!] === 0
                       ? "Sin stock en este talle"
                       : "Añadir al carrito"}
+              </button>
+            </div>
+            */}
+
+            {/* Botón de WhatsApp para consultar disponibilidad */}
+            <div className="mt-8">
+              <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-100 rounded-xl">
+                <div className="flex items-center mb-2">
+                  <MessageCircle className="text-green-600 mr-2" size={20} />
+                  <span className="text-sm font-medium text-gray-800">Consulta rápida por WhatsApp</span>
+                </div>
+                <p className="text-xs text-gray-600">
+                  Estamos en modo catálogo. Consultá disponibilidad, talles, envíos y métodos de pago directamente con nosotros.
+                </p>
+              </div>
+
+              <button
+                onClick={handleWhatsAppClick}
+                className="w-full py-3 rounded-lg text-base transition bg-gradient-to-r from-green-500 to-emerald-600 text-white hover:from-green-600 hover:to-emerald-700 flex items-center justify-center shadow-md hover:shadow-lg"
+              >
+                <MessageCircle size={22} className="mr-2" />
+                Consultar disponibilidad por WhatsApp
               </button>
             </div>
 
@@ -562,7 +533,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         </div>
       )}
 
-
       {categoriaNombre && (
         <div className="mt-8">
           <div className="flex items-center justify-center mb-6">
@@ -574,7 +544,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
           </div>
           <div className="rounded-xl p-4 shadow-sm text-sm text-gray-700 space-y-1">
             
-
             {categoriaNombre === "Indumentaria" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
@@ -603,7 +572,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-
             {categoriaNombre === "Paletas" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
@@ -616,9 +584,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                 {producto.juego && <CardEspecificacion label="Juego" value={producto.juego} />}
                 {producto.potencia && <BarraEspecificacion label="Potencia" value={producto.potencia} />}
                 {producto.control && <BarraEspecificacion label="Control" value={producto.control} />}
-
               </div>
-              
             )}
 
             {categoriaNombre === "Accesorios" && (
@@ -629,12 +595,9 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                 {producto.textura && <CardEspecificacion label="Textura" value={producto.textura} />}
               </div>
             )}
-
-            {/* Agregá más casos según tus categorías */}
           </div>
         </div>
       )}
-
 
       {relacionados.length > 0 && (
         <div className="mt-8 pb-4">
@@ -646,7 +609,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
             <div className="flex-grow border-t border-gray-300"></div>
           </div>
           
-
           <Slider
             dots={false}
             infinite={false}
@@ -678,72 +640,69 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               const cuotas = producto.precio / 3;
 
               return (
-            <div key={producto.id} className="px-3">
-              <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-6 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto">
-                <div className="relative">
-                  {mostrarOferta && (
-                    <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
-                      - {porcentajeDescuento}%
+                <div key={producto.id} className="px-3">
+                  <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-6 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto">
+                    <div className="relative">
+                      {mostrarOferta && (
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
+                          - {porcentajeDescuento}%
+                        </div>
+                      )}
+                      <Link href={`/products/${producto.id}`} prefetch={false}>
+                        <div className="w-full h-[280px] flex items-center justify-center bg-white rounded-2xl mb-4 overflow-hidden">
+                          <img
+                            src={producto.imagen}
+                            alt={producto.nombre}
+                            className="max-h-[260px] object-contain transition-transform duration-300 hover:scale-105"
+                          />
+                        </div>
+                      </Link>
                     </div>
-                  )}
-                  <Link href={`/products/${producto.id}`} prefetch={false}>
-                    <div className="w-full h-[280px] flex items-center justify-center bg-white rounded-2xl mb-4 overflow-hidden">
-                      <img
-                        src={producto.imagen}
-                        alt={producto.nombre}
-                        className="max-h-[260px] object-contain transition-transform duration-300 hover:scale-105"
-                      />
-                    </div>
-                  </Link>
-                </div>
 
-                <Link href={`/products/${producto.id}`} prefetch={false}>
-                  <h3 className="font-amatic text-2xl tracking-wide text-[#4a3c2f] mb-2 h-[60px] overflow-hidden truncate ">
-                    {producto.nombre}
-                  </h3>
-                </Link>
+                    <Link href={`/products/${producto.id}`} prefetch={false}>
+                      <h3 className="font-amatic text-2xl tracking-wide text-[#4a3c2f] mb-2 h-[60px] overflow-hidden truncate ">
+                        {producto.nombre}
+                      </h3>
+                    </Link>
 
-                {/* Separador decorativo */}
-                <div className="w-12 h-[2px] bg-[#816b4b] mx-auto my-2 rounded-full" />
+                    {/* Separador decorativo */}
+                    <div className="w-12 h-[2px] bg-[#816b4b] mx-auto my-2 rounded-full" />
 
-                {mostrarOferta ? (
-                  <div className="flex justify-center items-center gap-2 text-base">
-                    <span className="line-through text-gray-500 text-sm">
-                      ${producto.precio.toLocaleString('es-ES')}
-                    </span>
-                    <span className="text-2xl font-semibold text-[#4a3c2f]">
-                      ${producto.precio_oferta!.toLocaleString('es-ES')}
-                    </span>
+                    {mostrarOferta ? (
+                      <div className="flex justify-center items-center gap-2 text-base">
+                        <span className="line-through text-gray-500 text-sm">
+                          ${producto.precio.toLocaleString('es-ES')}
+                        </span>
+                        <span className="text-2xl font-semibold text-[#4a3c2f]">
+                          ${producto.precio_oferta!.toLocaleString('es-ES')}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-2xl font-semibold text-[#4a3c2f] mt-2">
+                        ${producto.precio.toLocaleString('es-ES')}
+                      </p>
+                    )}
+
+                    {!mostrarOferta ? (
+                      <p className="text-sm font-medium text-green-700 mt-1">
+                        ${precioEfectivo.toLocaleString('es-ES', { minimumFractionDigits: 2 })} con transferencia
+                      </p>
+                    ) : (
+                      <p className="text-sm font-medium text-green-700 mt-1">
+                        OFERTA ACTIVA!!
+                      </p>
+                    )}
+
+                    <p className="text-sm mt-2 font-poppins text-gray-700">
+                      💳 6 cuotas disponibles con tarjeta
+                    </p>
                   </div>
-                ) : (
-                  <p className="text-2xl font-semibold text-[#4a3c2f] mt-2">
-                    ${producto.precio.toLocaleString('es-ES')}
-                  </p>
-                )}
-
-                {!mostrarOferta ? (
-                  <p className="text-sm font-medium text-green-700 mt-1">
-                    ${precioEfectivo.toLocaleString('es-ES', { minimumFractionDigits: 2 })} con transferencia
-                  </p>
-                ) : (
-                  <p className="text-sm font-medium text-green-700 mt-1">
-                    OFERTA ACTIVA!!
-                  </p>
-                )}
-
-                <p className="text-sm mt-2 font-poppins text-gray-700">
-                  💳 6 cuotas disponibles con tarjeta
-                </p>
-              </div>
-            </div>
-          );
+                </div>
+              );
             })}
           </Slider>
         </div>
       )}
-
-
     </div>
   );
 }
-
