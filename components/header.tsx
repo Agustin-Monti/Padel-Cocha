@@ -7,7 +7,7 @@ import HeaderAuth from "../components/header-auth";
 import { hasEnvVars } from "../utils/supabase/check-env-vars";
 import Favorito from "./Favorito";
 import { User } from '@supabase/supabase-js';
-import { getCategoriasYTipos, hayOfertasActivas  } from "@/actions/header-actions";
+import { getCategoriasYTipos, hayOfertasActivas, getEstados  } from "@/actions/header-actions";
 import { ChevronDown, Menu, X, Heart, Search } from "lucide-react";
 import Busqueda from "../components/Busqueda";
 
@@ -31,6 +31,7 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
   const [isBusquedaOpen, setIsBusquedaOpen] = useState(false);
   const [hayOfertas, setHayOfertas] = useState(false);
   const [marcasPaletas, setMarcasPaletas] = useState<any[]>([]);
+  const [estados, setEstados] = useState<any[]>([]);
 
 
 
@@ -40,10 +41,11 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
     const fetchData = async () => {
       try {
         const { categorias, tiposProductos, marcasPaletas } = await getCategoriasYTipos();
+        const estadosData = await getEstados();
         setCategorias(categorias);
         setTiposProductos(tiposProductos);
         setMarcasPaletas(marcasPaletas);
-
+        setEstados(estadosData);
       } catch (error) {
         console.error("Error al obtener los datos:", error);
       }
@@ -211,43 +213,76 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
           </Link>
 
           {categorias.map((categoria) => (
-            <div key={categoria.id} className="mb-2">
-              {/* Categoría no clickeable en móvil, con flecha */}
-              <div
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => toggleCategoriaMobile(categoria.id)} // Expandir/colapsar al tocar
-              >
-                <span className="text-lg font-bebas text-gray-700">
-                  {categoria.nombre}
-                </span>
-                <ChevronDown
-                  size={20}
-                  className={`transform transition-transform ${
-                    expandedCategoriaId === categoria.id ? "rotate-180" : ""
-                  }`}
-                />
-              </div>
+      <div key={categoria.id} className="mb-2">
+        {/* Categoría no clickeable en móvil, con flecha */}
+        <div
+          className="flex items-center justify-between cursor-pointer"
+          onClick={() => toggleCategoriaMobile(categoria.id)}
+        >
+          <span className="text-lg font-bebas text-gray-700">
+            {categoria.nombre}
+          </span>
+          <ChevronDown
+            size={20}
+            className={`transform transition-transform ${
+              expandedCategoriaId === categoria.id ? "rotate-180" : ""
+            }`}
+          />
+        </div>
 
-              {/* Tipos de productos (solo se muestra si la categoría está expandida) */}
-              {expandedCategoriaId === categoria.id && (
-                <div className="pl-4 mt-2">
-                  {(categoria.nombre.toLowerCase() === "paletas" ? marcasPaletas : tiposProductos[categoria.id])?.map((item) => (
+        {/* Tipos de productos y estados (solo se muestra si la categoría está expandida) */}
+        {expandedCategoriaId === categoria.id && (
+          <div className="pl-4 mt-2">
+            {categoria.nombre.toLowerCase() === "paletas" ? (
+              <>
+                {/* Sección de Marcas */}
+                <div className="mb-4">
+                  <div className="font-semibold text-gray-800 mb-2 border-b pb-1">
+                    Marcas
+                  </div>
+                  {marcasPaletas?.map((item) => (
                     <Link
-                      key={item.id}
-                      href={
-                        categoria.nombre.toLowerCase() === "paletas"
-                          ? `/products-category/${categoria.id}/marca/${item.id}`
-                          : `/products-category/${categoria.id}/tipo/${item.id}`
-                      }
-                      className="block py-1 text-gray-700 hover:bg-gray-100"
+                      key={`marca-mobile-${item.id}`}
+                      href={`/products-category/${categoria.id}/marca/${item.id}`}
+                      className="block py-1 text-gray-700 hover:bg-gray-100 pl-2"
                     >
                       {item.nombre}
                     </Link>
                   ))}
                 </div>
-              )}
-            </div>
-          ))}
+                
+                {/* Sección de Estados */}
+                <div>
+                  <div className="font-semibold text-gray-800 mb-2 border-b pb-1">
+                    Estado
+                  </div>
+                  {estados?.map((estado) => (
+                    <Link
+                      key={`estado-mobile-${estado.id}`}
+                      href={`/products-category/${categoria.id}/estado/${estado.valor}`}
+                      className="block py-1 text-gray-700 hover:bg-gray-100 pl-2"
+                    >
+                      {estado.nombre}
+                    </Link>
+                  ))}
+                </div>
+              </>
+            ) : (
+              // Para otras categorías, mostrar solo tipos
+              tiposProductos[categoria.id]?.map((item) => (
+                <Link
+                  key={item.id}
+                  href={`/products-category/${categoria.id}/tipo/${item.id}`}
+                  className="block py-1 text-gray-700 hover:bg-gray-100"
+                >
+                  {item.nombre}
+                </Link>
+              ))
+            )}
+          </div>
+        )}
+      </div>
+    ))}
 
           {/* BOTÓN DE OFERTA (solo si hay ofertas y estamos en cliente) */}
           {typeof window !== "undefined" && hayOfertas && (
@@ -295,25 +330,58 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
             {/* Dropdown con tipos de productos */}
             {dropdownOpen === categoria.id && (
               <div 
-                className="absolute left-0 mt-1 bg-white shadow-lg rounded-lg w-48 z-50 border border-gray-300"
+                className="absolute left-0 mt-1 bg-white shadow-lg rounded-lg z-50 border border-gray-300 min-w-[200px]"
                 onMouseEnter={() => handleMouseEnter(categoria.id)}
                 onMouseLeave={handleMouseLeave}
                 style={{ paddingTop: "10px", paddingBottom: "10px", pointerEvents: "auto" }}
               >
-                {(categoria.nombre.toLowerCase() === "paletas" ? marcasPaletas : tiposProductos[categoria.id])?.map((item) => (
-                  <Link
-                    key={item.id}
-                    href={
-                      categoria.nombre.toLowerCase() === "paletas"
-                        ? `/products-category/${categoria.id}/marca/${item.id}`
-                        : `/products-category/${categoria.id}/tipo/${item.id}`
-                    }
-                    className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
-                  >
-                    {item.nombre}
-                  </Link>
-                ))}
-
+                {/* Si es la categoría Paletas, mostrar marcas Y estados */}
+                {categoria.nombre.toLowerCase() === "paletas" ? (
+                  <div className="grid grid-cols-2">
+                    {/* Columna de Marcas */}
+                    <div>
+                      <div className="px-4 py-2 font-semibold text-gray-800 border-b">
+                        Marcas
+                      </div>
+                      {marcasPaletas?.map((item) => (
+                        <Link
+                          key={`marca-${item.id}`}
+                          href={`/products-category/${categoria.id}/marca/${item.id}`}
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        >
+                          {item.nombre}
+                        </Link>
+                      ))}
+                    </div>
+                    
+                    {/* Columna de Estados */}
+                    <div>
+                      <div className="px-4 py-2 font-semibold text-gray-800 border-b">
+                        Estado
+                      </div>
+                      {estados?.map((estado) => (
+                        <Link
+                          key={`estado-${estado.id}`}
+                          href={`/products-category/${categoria.id}/estado/${estado.valor}`}
+                          className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                        >
+                          {estado.nombre}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  // Para otras categorías, mostrar solo tipos
+                  tiposProductos[categoria.id]?.map((item) => (
+                    <Link
+                      key={item.id}
+                      href={`/products-category/${categoria.id}/tipo/${item.id}`}
+                      className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+                    >
+                      {item.nombre}
+                    </Link>
+                  ))
+                )}
               </div>
             )}
           </div>
