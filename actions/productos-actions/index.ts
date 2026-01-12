@@ -17,6 +17,7 @@ export const createProductAction = async (producto: {
   color: string;
   peso: number;
   descripcion: string;
+  estado: string;
   marca_id?: number;
   forma?: string;
   balance?: string;
@@ -45,6 +46,8 @@ export const createProductAction = async (producto: {
 }) => {
   const supabase = createClient();
 
+  
+
   const { data: { user }, error: userError } = await supabase.auth.getUser();
 
   if (userError || !user) {
@@ -53,10 +56,12 @@ export const createProductAction = async (producto: {
   }
 
   const {
-    nombre, precio, stock, imagen, categoria_id, tipo_id, grupo_variantes, color, peso, descripcion,
+    nombre, precio, stock, imagen, categoria_id, tipo_id, grupo_variantes, color, peso, descripcion, estado,
     marca_id, forma, balance, marco, nucleo, acabado, potencia, control, juego,
-    material, genero, talle, origen, modelo, medidas,ancho, largo, textura,capacidad,
+    material, genero, talle, origen, modelo, medidas, ancho, largo, textura, capacidad,
   } = producto;
+
+  
 
   const { data, error: productoError } = await supabase.from("productos").insert([{
     nombre,
@@ -69,6 +74,7 @@ export const createProductAction = async (producto: {
     color,
     peso,
     descripcion,
+    estado,
     marca_id,
     forma,
     balance,
@@ -95,16 +101,15 @@ export const createProductAction = async (producto: {
   }]);
 
   if (productoError) {
-    console.error(productoError.code + " " + productoError.message);
+    console.error("❌ Error al insertar producto:", productoError.code + " " + productoError.message);
+    console.error("🔍 Detalles del error:", productoError);
     return false;
   }
 
+  console.log("✅ Producto insertado correctamente:", data);
   return true;
 };
 
-
-
-  
 
 export const fetchProductos = async () => {
   const supabase = createClient();
@@ -244,6 +249,7 @@ export async function guardarEdit(e: FormData) {
     imagen: e.get("url") as string | null, // <- ahora recibís la URL ya subida
     peso: e.get("peso") as string,           // 👈 nuevo
     descripcion: e.get("descripcion") as string, // 👈 nuevo
+    estado: e.get("estado") as string, // 👈 nuevo
     modelo: e.get("modelo") as string | null,
     origen: e.get("origen") as string | null,
     material: e.get("material") as string | null,
@@ -277,6 +283,7 @@ export async function guardarEdit(e: FormData) {
       ...(producto.imagen && { imagen: producto.imagen }), // solo si hay imagen nueva
       peso: producto.peso,               // 👈 nuevo
       descripcion: producto.descripcion, // 👈 nuevo
+      estado: producto.estado, // 👈 nuevo
       modelo: producto.modelo,
       origen: producto.origen,
       material: producto.material,
@@ -301,10 +308,9 @@ export async function guardarEdit(e: FormData) {
 }
 
 
-
-
 // Guardar Edit
 
+// actions/productos-actions/index.ts
 export async function eliminarProductoById(productoId: string | number): Promise<boolean> {
   console.log('🔨 eliminarProductoById llamado con:', productoId);
   
@@ -373,8 +379,6 @@ export async function eliminarProductoById(productoId: string | number): Promise
 }
 
 
-
-
 // Galeria
 
 export const obtenerImagenesProducto = async (productoId: string) => {
@@ -397,7 +401,6 @@ export const obtenerImagenesProducto = async (productoId: string) => {
     return [];
   }
 };
-
 
 
 export const eliminarImagenGaleria = async (productoId: string, imagenUrl: string) => {
@@ -542,12 +545,6 @@ export const guardarOferta = async (productoId: string, oferta: { oferta_activa:
 };
 
 
-
-
-
-
-
-
 // app/productos/[id]/page.tsx
 
 export async function getProductosRelacionados(categoriaId: number, tipoId: number, productoId: string) {
@@ -567,9 +564,6 @@ export async function getProductosRelacionados(categoriaId: number, tipoId: numb
 
   return data;
 }
-
-
-// app/productos/[id]/page.tsx
 
 
 // components/Busqueda
@@ -603,10 +597,138 @@ export const buscarProductosPorNombre = async (
 
 
 
+// Función para obtener productos por categoría y estado
+export const getProductosPorCategoriaYEstado = async (
+  categoriaId: string,
+  estado: string
+) => {
+  const supabase = createClient();
 
+  try {
+    console.log(`🔍 Buscando productos: categoriaId=${categoriaId}, estado=${estado}`);
+    const { data, error } = await supabase
+      .from("productos")
+      .select(`
+        *,
+        categorias (
+          id,
+          nombre
+        ),
+        marcas (
+          id,
+          nombre
+        ),
+        tipo_productos  (
+          id,
+          nombre
+        )
+      `)
+      .eq("categoria_id", parseInt(categoriaId))
+      .eq("estado", estado)
+      .order("nombre", { ascending: true });
+
+    if (error) {
+      console.error("Error al obtener productos por categoría y estado:", error);
+      return [];
+    }
+
+    // Transformar los datos para mantener consistencia con otras funciones
+    const productosTransformados = data.map((producto) => ({
+      id: producto.id.toString(),
+      nombre: producto.nombre,
+      precio: producto.precio,
+      imagen: producto.imagen,
+      tipo_id: producto.tipo_id.toString(),
+      color: producto.color,
+      estado: producto.estado,
+      oferta_activa: producto.oferta_activa || false,
+      precio_oferta: producto.precio_oferta || producto.precio,
+      // Incluir datos relacionados si se necesitan
+      categoria_nombre: producto.categorias?.nombre,
+      marca_nombre: producto.marcas?.nombre,
+      tipo_nombre: producto.tipos?.nombre,
+    }));
+
+    console.log(`📊 Productos encontrados para categoría ${categoriaId} y estado ${estado}:`, productosTransformados.length);
+    return productosTransformados;
+
+  } catch (error) {
+    console.error("Error en getProductosPorCategoriaYEstado:", error);
+    return [];
+  }
+};
+
+// Función para obtener todos los estados únicos disponibles
+export const getEstados = async (): Promise<Array<{ id: number; nombre: string; valor: string }>> => {
+  const supabase = createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("productos")
+      .select("estado")
+      .not("estado", "is", null)  // Filtrar valores nulos
+      .order("estado", { ascending: true });
+
+    if (error) {
+      console.error("Error al obtener estados:", error);
+      return [];
+    }
+
+    // Obtener valores únicos y transformar
+    const estadosUnicos = [...new Set(data.map(item => item.estado))];
+    
+    // Crear un array con estructura similar a marcas/tipos
+    const estadosTransformados = estadosUnicos.map((estado, index) => ({
+      id: index + 1,
+      nombre: estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase(),
+      valor: estado.toLowerCase(),
+    }));
+
+    console.log("📝 Estados disponibles encontrados:", estadosTransformados);
+    return estadosTransformados;
+
+  } catch (error) {
+    console.error("Error en getEstados:", error);
+    return [];
+  }
+};
+
+// Opcional: Función para obtener estados filtrados por categoría (si quieres mostrar solo estados de una categoría específica)
+export const getEstadosPorCategoria = async (categoriaId: number): Promise<Array<{ id: number; nombre: string; valor: string }>> => {
+  const supabase = createClient();
+
+  try {
+    const { data, error } = await supabase
+      .from("productos")
+      .select("estado")
+      .eq("categoria_id", categoriaId)
+      .not("estado", "is", null)
+      .order("estado", { ascending: true });
+
+    if (error) {
+      console.error("Error al obtener estados por categoría:", error);
+      return [];
+    }
+
+    // Obtener valores únicos y transformar
+    const estadosUnicos = [...new Set(data.map(item => item.estado))];
+    
+    const estadosTransformados = estadosUnicos.map((estado, index) => ({
+      id: index + 1,
+      nombre: estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase(),
+      valor: estado.toLowerCase(),
+    }));
+
+    console.log(`📝 Estados para categoría ${categoriaId}:`, estadosTransformados);
+    return estadosTransformados;
+
+  } catch (error) {
+    console.error("Error en getEstadosPorCategoria:", error);
+    return [];
+  }
+};
 
 
 
  
-
 
