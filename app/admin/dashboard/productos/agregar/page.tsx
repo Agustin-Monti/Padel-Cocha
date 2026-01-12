@@ -35,6 +35,7 @@ interface Product {
   color: string;
   peso: string;
   descripcion: string;
+  estado: string;
   // Campos específicos indumentaria
   marcaIndumentaria?: string;
   modelo?: string;
@@ -62,6 +63,7 @@ export default function CreateProductPage() {
     color: "",
     peso: "",
     descripcion: "",
+    estado: "nuevo",
     talles: {}, // para indumentaria
   });
 
@@ -162,6 +164,7 @@ export default function CreateProductPage() {
         categoria_id: Number(product.categoria_id),
         tipo_id: Number(product.tipo_id),
         marca_id: Number(product.marca_id),
+        estado: product.estado,
 
         // Campos opcionales para indumentaria (solo si existe)
         modelo: product.modelo || undefined,
@@ -182,6 +185,19 @@ export default function CreateProductPage() {
         textura: product.textura || undefined,
       };
 
+
+      // AÑADE ESTE CONSOLE.LOG PARA VER LOS DATOS
+      console.log("📦 Datos que se enviarán a la base de datos:", nuevoProducto);
+      console.log("📊 Tipo de datos:");
+      console.log("- nombre:", typeof nuevoProducto.nombre, nuevoProducto.nombre);
+      console.log("- precio:", typeof nuevoProducto.precio, nuevoProducto.precio);
+      console.log("- stock:", typeof nuevoProducto.stock, nuevoProducto.stock);
+      console.log("- categoria_id:", typeof nuevoProducto.categoria_id, nuevoProducto.categoria_id);
+      console.log("- tipo_id:", typeof nuevoProducto.tipo_id, nuevoProducto.tipo_id);
+      console.log("- marca_id:", typeof nuevoProducto.marca_id, nuevoProducto.marca_id);
+      console.log("- estado:", typeof nuevoProducto.estado, nuevoProducto.estado);
+      console.log("- imagen:", typeof nuevoProducto.imagen, nuevoProducto.imagen);
+      console.log("- peso:", typeof nuevoProducto.peso, nuevoProducto.peso);
 
 
       await createProductAction(nuevoProducto);
@@ -313,6 +329,19 @@ export default function CreateProductPage() {
           />
         </div>
         <div>
+          <Label>Estado</Label>
+            <select
+              name="estado"
+              value={product.estado}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+              required
+            >
+              <option value="nuevo">Nuevo</option>
+              <option value="usado">Usado Seleccionado</option>
+            </select>
+        </div>
+        <div>
           <Label>Tipo</Label>
           <select
             name="tipo_id"
@@ -424,5 +453,3 @@ export default function CreateProductPage() {
     </form>
   );
 }
-
-
