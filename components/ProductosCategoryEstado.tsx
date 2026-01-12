@@ -7,15 +7,19 @@ import { getProductosPorCategoriaYEstado } from "@/actions/productos-actions";
 import Link from 'next/link';
 
 type Producto = {
-  id: string;
-  nombre: string;
-  precio: number;
-  imagen: string;
-  tipo_id: string;
-  color: string;
-  oferta_activa?: boolean;
-  precio_oferta: number;
-  estado?: string; // Nuevo campo para estado
+  id: any;
+  nombre: any;
+  precio: any;
+  imagen: any;
+  tipo_id: any;
+  color: any;
+  estado: any;
+  oferta_activa: any;
+  precio_oferta: any;
+  categoria_nombre?: any;
+  marca_nombre?: any; // Cambiado de marcas a marca_nombre
+  tipo_nombre?: any;
+  marca_id?: any; // Opcional si no viene siempre
 };
 
 export default function ProductosCategoryEstado() {
@@ -25,9 +29,11 @@ export default function ProductosCategoryEstado() {
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [coloresDisponibles, setColoresDisponibles] = useState<string[]>([]);
+  const [marcasDisponibles, setMarcasDisponibles] = useState<{ id: string; nombre: string }[]>([]);
   const [precioMinimo, setPrecioMinimo] = useState(0);
   const [precioMaximo, setPrecioMaximo] = useState(1000000);
   const [filtroColorSeleccionado, setFiltroColorSeleccionado] = useState<string | null>(null);
+  const [filtroMarcaSeleccionada, setFiltroMarcaSeleccionada] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nombreEstado, setNombreEstado] = useState<string>("");
 
@@ -42,8 +48,24 @@ export default function ProductosCategoryEstado() {
       getProductosPorCategoriaYEstado(categoriaId, estado).then((productos) => {
         console.log("Productos recibidos en cliente:", productos);
         setProductos(productos);
+        
+        // Obtener colores únicos
         const colores = Array.from(new Set(productos.map((p) => p.color)));
         setColoresDisponibles(colores);
+        
+        // Obtener marcas únicas - USANDO marca_nombre en lugar de marcas
+        const marcasMap = new Map<string, string>();
+        productos.forEach((producto) => {
+          if (producto.marca_nombre) {
+            // Si no tenemos marca_id, generamos un ID temporal basado en el nombre
+            const marcaId = producto.marca_nombre.toLowerCase().replace(/\s+/g, '-');
+            marcasMap.set(marcaId, producto.marca_nombre);
+          }
+        });
+        
+        // Convertir el Map a array de objetos
+        const marcasArray = Array.from(marcasMap.entries()).map(([id, nombre]) => ({ id, nombre }));
+        setMarcasDisponibles(marcasArray);
       });
     }
   }, [categoriaId, estado]);
@@ -51,7 +73,19 @@ export default function ProductosCategoryEstado() {
   const productosFiltrados = productos.filter((p) => {
     const dentroRango = p.precio >= precioMinimo && p.precio <= precioMaximo;
     const cumpleColor = filtroColorSeleccionado ? p.color === filtroColorSeleccionado : true;
-    return dentroRango && cumpleColor;
+    
+    // Filtrar por marca - usando marca_nombre si no hay marca_id
+    let cumpleMarca = true;
+    if (filtroMarcaSeleccionada) {
+      if (p.marca_id) {
+        cumpleMarca = p.marca_id === filtroMarcaSeleccionada;
+      } else if (p.marca_nombre) {
+        const marcaIdDeProducto = p.marca_nombre.toLowerCase().replace(/\s+/g, '-');
+        cumpleMarca = marcaIdDeProducto === filtroMarcaSeleccionada;
+      }
+    }
+    
+    return dentroRango && cumpleColor && cumpleMarca;
   });
 
   const filtros = (
@@ -62,14 +96,29 @@ export default function ProductosCategoryEstado() {
         <p className="text-blue-800 font-medium">Mostrando productos: <span className="font-bold">{nombreEstado}</span></p>
       </div>
 
+      {/* Filtro por colores */}
       <h3 className="text-md font-medium mt-4 mb-2">Colores</h3>
       <ul className="border-b-2">
+        <li key="todos-colores" className="mb-4">
+          <label className="flex items-center space-x-4">
+            <input
+              type="radio"
+              name="color"
+              className="form-radio scale-150"
+              checked={filtroColorSeleccionado === null}
+              onChange={() => setFiltroColorSeleccionado(null)}
+            />
+            <span className="text-xl font-medium">Todos los colores</span>
+          </label>
+        </li>
+        
         {coloresDisponibles.map((color) => (
           <li key={color} className="mb-4">
             <label className="flex items-center space-x-4">
               <input
-                type="checkbox"
-                className="form-checkbox scale-150"
+                type="radio"
+                name="color"
+                className="form-radio scale-150"
                 checked={filtroColorSeleccionado === color}
                 onChange={() =>
                   setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
@@ -81,6 +130,45 @@ export default function ProductosCategoryEstado() {
         ))}
       </ul>
 
+      {/* Filtro por marcas */}
+      {marcasDisponibles.length > 0 && (
+        <>
+          <h3 className="text-md font-medium mt-4 mb-2">Marcas</h3>
+          <ul className="border-b-2">
+            <li key="todas-marcas" className="mb-4">
+              <label className="flex items-center space-x-4">
+                <input
+                  type="radio"
+                  name="marca"
+                  className="form-radio scale-150"
+                  checked={filtroMarcaSeleccionada === null}
+                  onChange={() => setFiltroMarcaSeleccionada(null)}
+                />
+                <span className="text-xl font-medium">Todas las marcas</span>
+              </label>
+            </li>
+            
+            {marcasDisponibles.map((marca) => (
+              <li key={marca.id} className="mb-4">
+                <label className="flex items-center space-x-4">
+                  <input
+                    type="radio"
+                    name="marca"
+                    className="form-radio scale-150"
+                    checked={filtroMarcaSeleccionada === marca.id}
+                    onChange={() =>
+                      setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
+                    }
+                  />
+                  <span className="text-xl font-medium">{marca.nombre}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </>
+      )}
+
+      {/* Filtro por rango de precio */}
       <h3 className="text-md font-medium mt-4 mb-2">Rango de precio</h3>
       <div className="flex flex-col space-y-2">
         <div className="flex justify-between">
@@ -105,11 +193,13 @@ export default function ProductosCategoryEstado() {
         />
       </div>
 
+      {/* Botón para reiniciar filtros */}
       <button
         onClick={() => {
           setFiltroColorSeleccionado(null);
+          setFiltroMarcaSeleccionada(null);
           setPrecioMinimo(0);
-          setPrecioMaximo(100000);
+          setPrecioMaximo(1000000);
         }}
         className="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-2 rounded-md transition-all"
       >
@@ -189,8 +279,6 @@ export default function ProductosCategoryEstado() {
               <div key={producto.id}>
                 <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-4 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto flex flex-col gap-y-2">
                   
-                  
-
                   {/* Imagen con etiqueta de oferta */}
                   <div className="relative">
                     {mostrarOferta && (
@@ -198,6 +286,12 @@ export default function ProductosCategoryEstado() {
                         -{porcentajeDescuento}%
                       </div>
                     )}
+                    
+                    {/* Etiqueta de estado */}
+                    <div className="absolute top-2 right-2 bg-blue-600 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
+                      {nombreEstado}
+                    </div>
+                    
                     <Link href={`/products/${producto.id}`} prefetch={false}>
                       <div className="w-full h-[300px] flex items-center justify-center">
                         <img
@@ -215,6 +309,13 @@ export default function ProductosCategoryEstado() {
                       {producto.nombre}
                     </h3>
                   </Link>
+
+                  {/* Marca si está disponible */}
+                  {producto.marca_nombre && (
+                    <p className="text-sm font-medium text-gray-600">
+                      {producto.marca_nombre}
+                    </p>
+                  )}
 
                   {/* Separador decorativo */}
                   <div className="w-10 h-[2px] bg-[#816b4b] mx-auto rounded-full" />
@@ -259,13 +360,24 @@ export default function ProductosCategoryEstado() {
                 No hay productos {nombreEstado.toLowerCase()} disponibles
               </h3>
               <p className="text-gray-500 mb-4">
-                No encontramos productos {nombreEstado.toLowerCase()} en esta categoría.
+                No encontramos productos {nombreEstado.toLowerCase()} con los filtros aplicados.
               </p>
+              <button
+                onClick={() => {
+                  setFiltroColorSeleccionado(null);
+                  setFiltroMarcaSeleccionada(null);
+                  setPrecioMinimo(0);
+                  setPrecioMaximo(1000000);
+                }}
+                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2"
+              >
+                Reiniciar filtros
+              </button>
               <Link 
                 href={`/products-category/${categoriaId}`}
-                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all"
+                className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-all"
               >
-                Ver todos los productos de esta categoría
+                Ver todos los productos
               </Link>
             </div>
           </div>
@@ -273,5 +385,4 @@ export default function ProductosCategoryEstado() {
       </section>
     </div>
   );
-
 }
