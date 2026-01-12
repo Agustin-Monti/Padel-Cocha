@@ -405,7 +405,7 @@ export const obtenerImagenesProducto = async (productoId: string) => {
 
 export const eliminarImagenGaleria = async (productoId: string, imagenUrl: string) => {
   const baseUrl =
-    process.env.NEXT_PUBLIC_SITE_URL; // o tu URL en producción
+    process.env.NEXT_PUBLIC_BASE_URL; // o tu URL en producción
 
   const response = await fetch(`${baseUrl}/api/eliminar_imagenes`, {
     method: 'POST',
@@ -731,5 +731,6 @@ export const getEstadosPorCategoria = async (categoriaId: number): Promise<Array
 
 
  
+
 
 
