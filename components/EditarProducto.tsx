@@ -21,6 +21,7 @@ export type Producto = {
   marca_id: string;
   peso: string;
   descripcion: string;
+  estado: string;
   // Campos específicos indumentaria
   modelo?: string;
   origen?: string;
@@ -191,6 +192,7 @@ const EditarProducto: React.FC<EditarProductoProps> = ({
     formData.append("url", imageUrl);
     formData.append("peso", producto.peso);
     formData.append("descripcion", producto.descripcion);
+    formData.append("estado", producto.estado);
     if (producto.modelo) formData.append("modelo", producto.modelo);
     if (producto.origen) formData.append("origen", producto.origen);
     if (producto.material) formData.append("material", producto.material);
@@ -371,6 +373,19 @@ const EditarProducto: React.FC<EditarProductoProps> = ({
                         className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition"
                       />
                     </div>
+                      
+                     <div className="col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+                      <select
+                        name="estado"
+                        value={producto.estado}
+                        onChange={handleChange}
+                        className="w-full border border-gray-300 rounded-lg p-3 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition bg-white"
+                      >
+                        <option value="nuevo">Nuevo</option>
+                        <option value="usado">Usado Seleccionado</option>
+                      </select>
+                    </div> 
                   </div>
                 </div>
 
