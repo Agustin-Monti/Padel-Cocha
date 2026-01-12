@@ -235,15 +235,6 @@ export default function ProductosCategoryEstado() {
 
       {/* Sidebar de filtros en desktop */}
       <aside className="hidden lg:block w-1/4 pr-6">
-        {/* Título de estado en desktop */}
-        <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200 shadow-sm">
-          <h1 className="text-xl font-bold text-blue-800 mb-2">
-            Productos: <span className="font-extrabold">{nombreEstado}</span>
-          </h1>
-          <p className="text-blue-600">
-            {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} encontrado{productosFiltrados.length !== 1 ? 's' : ''}
-          </p>
-        </div>
         {filtros}
       </aside>
 
@@ -386,3 +377,4 @@ export default function ProductosCategoryEstado() {
     </div>
   );
 }
+
