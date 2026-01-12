@@ -27,6 +27,7 @@ type Producto = {
   precio_oferta: number;
   peso: string;
   descripcion: string;
+  estado: string;
   valorado: boolean;
 };
 
