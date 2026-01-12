@@ -189,18 +189,7 @@ export default function ProductosCategoryEstado() {
               <div key={producto.id}>
                 <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-4 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto flex flex-col gap-y-2">
                   
-                  {/* Badge de estado */}
-                  <div className="absolute top-2 right-2 z-10">
-                    <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                      producto.estado === 'nuevo' 
-                        ? 'bg-green-100 text-green-800 border border-green-300' 
-                        : producto.estado === 'usado'
-                        ? 'bg-yellow-100 text-yellow-800 border border-yellow-300'
-                        : 'bg-blue-100 text-blue-800 border border-blue-300'
-                    }`}>
-                      {producto.estado ? producto.estado.charAt(0).toUpperCase() + producto.estado.slice(1) : nombreEstado}
-                    </span>
-                  </div>
+                  
 
                   {/* Imagen con etiqueta de oferta */}
                   <div className="relative">
@@ -284,4 +273,5 @@ export default function ProductosCategoryEstado() {
       </section>
     </div>
   );
+
 }
