@@ -337,9 +337,6 @@ export default function ProductosCategoryEstado() {
                       Oferta Activa
                     </p>
                   )}
-
-                  {/* Cuotas */}
-                  <p className="text-sm font-poppins text-gray-700">💳 6 cuotas disponibles con tarjeta</p>
                 </div>
               </div>
             );
@@ -377,4 +374,5 @@ export default function ProductosCategoryEstado() {
     </div>
   );
 }
+
 
