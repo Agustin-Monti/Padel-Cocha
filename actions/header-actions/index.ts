@@ -94,3 +94,27 @@ export const hayOfertasActivas = async (): Promise<boolean> => {
   return data && data.length > 0;
 };
 
+export const getEstados = async () => {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from("productos")
+    .select("estado")
+    .not("estado", "is", null)
+    .order("estado");
+    
+  if (error) {
+    console.error("Error al obtener estados:", error);
+    return [];
+  }
+  
+  // Obtener valores únicos
+  const estadosUnicos = [...new Set(data.map(item => item.estado))];
+  
+  // Transformar a formato similar a marcas/tipos
+  return estadosUnicos.map((estado, index) => ({
+    id: index + 1, // ID temporal
+    nombre: estado.charAt(0).toUpperCase() + estado.slice(1), // Capitalizar
+    valor: estado
+  }));
+};
