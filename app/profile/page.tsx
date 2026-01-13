@@ -10,7 +10,7 @@ export default function ProfilePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-8 px-4">
       <div className="max-w-6xl mx-auto">
-        {/* Header del perfil */}
+        {/* Header del perfill */}
         <div className="mb-8">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 mb-8">
             <div>
@@ -36,3 +36,4 @@ export default function ProfilePage() {
     </div>
   );
 }
+
