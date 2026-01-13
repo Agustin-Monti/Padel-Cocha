@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import Alerta from '@/components/alerta';
+import { MapPin, Lock, CreditCard, Calendar } from 'lucide-react';
 
 type Direccion = {
   id: string;
@@ -136,16 +137,47 @@ export default function Direcciones() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
-      <h2 className="text-xl font-semibold text-gray-800">Direcciones</h2>
-      <p className="text-gray-600">Gestioná tus direcciones de envío o facturación.</p>
+      {/* Header */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="p-3 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl shadow-lg">
+            <MapPin className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Gestión de Direcciones</h2>
+            <p className="text-gray-600 mt-1">Administra tus direcciones de envío y facturación</p>
+          </div>
+        </div>
+        <div className="h-1 w-20 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full"></div>
+      </div>
 
-      <Alerta
+      {/* Feature Status Banner */}
+      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-2xl p-6 mb-6">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="p-4 bg-white rounded-xl shadow-sm border border-blue-100">
+            <Lock className="h-12 w-12 text-blue-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Función en Desarrollo</h3>
+            <p className="text-gray-700 mb-3">
+              La gestión de direcciones estará disponible próximamente como parte de nuestra 
+              suite completa de servicios para usuarios registrados.
+            </p>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">Disponible en la próxima actualización</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* <Alerta
         mensaje={alerta.mensaje}
         visible={alerta.visible}
         onClose={() => setAlerta({ ...alerta, visible: false })}
-      />
+      /> */}
 
-      {!mostrarFormulario ? (
+      {/* {!mostrarFormulario ? (
         <div className="space-y-4">
           {direcciones.length > 0 ? (
             direcciones.map((direccion) => (
@@ -272,7 +304,7 @@ export default function Direcciones() {
             </div>
           </form>
         </div>
-      )}
+      )} */}
     </div>
   );
 }
