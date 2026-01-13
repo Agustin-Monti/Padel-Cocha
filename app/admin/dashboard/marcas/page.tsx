@@ -6,7 +6,7 @@ import Swal from 'sweetalert2';
 import 'sweetalert2/dist/sweetalert2.min.css';
 import { fetchMarcas, getMarcaById, eliminarMarcasById } from '@/actions/marcas-actions'; // Asegúrate de que la función fetchCategorias esté implementada correctamente.
 import Link from "next/link";
-import EditarCategoria from "@/components/EditarCategoria";
+import EditarMarcas from "@/components/EditarMarcas";
 import { PencilIcon, TrashIcon } from '@heroicons/react/24/solid';
 
 type Marca = {
@@ -57,7 +57,7 @@ export default function Marcas() {
           Swal.fire({
             icon: 'success',
             title: '¡Éxito!',
-            text: 'Categoria actualizada correctamente.',
+            text: 'Marca actualizada correctamente.',
             timer: 2000,
             showConfirmButton: false,
           });
@@ -65,7 +65,7 @@ export default function Marcas() {
           Swal.fire({
             icon: 'error',
             title: 'Error',
-            text: 'Error al actualizar la Categoria.',
+            text: 'Error al actualizar la Marca.',
           });
         }
   };
@@ -76,7 +76,7 @@ export default function Marcas() {
        // Mostrar el cuadro de confirmación
        const result = await Swal.fire({
          title: '¿Estás seguro?',
-         text: `La Categoria con ID ${id} será eliminado permanentemente.`,
+         text: `La Marca con ID ${id} será eliminado permanentemente.`,
          icon: 'warning',
          showCancelButton: true,
          confirmButtonColor: '#3085d6',
@@ -98,7 +98,7 @@ export default function Marcas() {
            Swal.fire({
              icon: 'success',
              title: 'Eliminado',
-             text: `Categoria con ID ${id} eliminada correctamente.`,
+             text: `Marca con ID ${id} eliminada correctamente.`,
              timer: 2000,
              showConfirmButton: false,
            });
@@ -107,7 +107,7 @@ export default function Marcas() {
            Swal.fire({
              icon: 'error',
              title: 'Error',
-             text: 'No se pudo eliminar la Categoria.',
+             text: 'No se pudo eliminar la Marca.',
            });
          }
        } else {
@@ -127,7 +127,7 @@ export default function Marcas() {
        Swal.fire({
          icon: 'error',
          title: 'Error',
-         text: 'Error al eliminar la Categoria.',
+         text: 'Error al eliminar la Marca.',
        });
      }
    };
@@ -189,11 +189,11 @@ export default function Marcas() {
         responsive
       />
 
-      <EditarCategoria
+      <EditarMarcas
         isOpen={modalOpen}
         onClose={closeModal}
-        categoriaId={marcaId}
-        categoriaDetalles={marcaDetalles} // Pasa los detalles de la categoría aquí
+        marcaId={marcaId}
+        marcaDetalles={marcaDetalles} // Pasa los detalles de la marca aquí
         onSave={handleSave}
       />
     </div>
