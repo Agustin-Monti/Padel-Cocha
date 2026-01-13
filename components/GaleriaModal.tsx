@@ -464,7 +464,7 @@ const GaleriaModal = ({ isOpen, onClose, productoId, productoNombre }: GaleriaMo
             <div className="sticky bottom-0 bg-white border-t border-gray-200 px-8 py-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm text-gray-500">
-                  Máximo 10 imágenes por producto
+                  Máximo 4 imágenes por producto
                 </div>
                 <button
                   onClick={onClose}
@@ -485,9 +485,9 @@ const GaleriaModal = ({ isOpen, onClose, productoId, productoNombre }: GaleriaMo
             {/* Botones de control */}
             <button
               onClick={closeFullscreen}
-              className="absolute top-6 right-6 p-3 bg-black/50 hover:bg-black/70 rounded-full text-white z-10 transition-colors"
+              className="absolute top-4 right-3 p-8 bg-black/50 hover:bg-black/70 rounded-full text-white z-10 transition-colors"
             >
-              <XMarkIcon className="w-6 h-6" />
+              <XMarkIcon className="w-8 h-8" />
             </button>
             
             {/* Imagen */}
