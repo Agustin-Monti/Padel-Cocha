@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createClient } from '@/utils/supabase/client';
 import ModalMisPedidos from '@/components/ModalMisPedidos';
+import { Package, Clock, Calendar, Zap, Shield, Truck, CreditCard, Bell } from 'lucide-react';
 
 type ProductoComprado = {
   id: number;
@@ -58,9 +59,44 @@ export default function MisPedidos() {
 
   return (
     <div className="space-y-6 max-w-3xl mx-auto px-4 sm:px-6 lg:px-0">
-      <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">Mis pedidos</h2>
+      {/* Header con gradiente */}
+      <div className="mb-8">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="p-3 bg-gradient-to-r from-amber-500 to-orange-500 rounded-xl shadow-lg">
+            <Package className="h-7 w-7 text-white" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-gray-800">Historial de Pedidos</h2>
+            <p className="text-gray-600 mt-1">Consulta y gestiona todos tus pedidos en un solo lugar</p>
+          </div>
+        </div>
+        <div className="h-1 w-24 bg-gradient-to-r from-amber-500 to-orange-500 rounded-full"></div>
+      </div>
 
-      {pedidos.length === 0 ? (
+      {/* Banner de estado */}
+      <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-6 mb-8">
+        <div className="flex flex-col md:flex-row items-center gap-6">
+          <div className="p-4 bg-white rounded-xl shadow-sm border border-amber-100">
+            <Clock className="h-12 w-12 text-amber-600" />
+          </div>
+          <div className="flex-1">
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Sección en Desarrollo</h3>
+            <p className="text-gray-700 mb-3">
+              Estamos trabajando para ofrecerte una experiencia completa de seguimiento de pedidos. 
+              Pronto podrás consultar el historial, estado de envío y detalles de todas tus compras.
+            </p>
+            <div className="flex items-center gap-2 text-gray-600">
+              <Calendar className="h-4 w-4" />
+              <span className="text-sm font-medium">Disponible en la próxima actualización</span>
+            </div>
+          </div>
+          <div className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-500 text-white font-semibold rounded-full">
+            Próximamente
+          </div>
+        </div>
+      </div>
+
+      {/* {pedidos.length === 0 ? (
         <p className="text-gray-600">No se encontraron pedidos asociados a tu correo.</p>
       ) : (
         <div className="grid gap-6">
@@ -107,15 +143,15 @@ export default function MisPedidos() {
             </div>
           ))}
         </div>
-      )}
+      )} */}
 
-      {pedidoSeleccionado && (
+      {/* {pedidoSeleccionado && (
         <ModalMisPedidos
           isOpen={!!pedidoSeleccionado}
           onClose={() => setPedidoSeleccionado(null)}
           pedido={pedidoSeleccionado}
         />
-      )}
+      )} */}
     </div>
   );
 }
