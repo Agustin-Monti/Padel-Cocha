@@ -118,54 +118,52 @@ export const guardarEditMarcas = async (formData: FormData): Promise<boolean> =>
 
 
 export const eliminarMarcasById = async (id: string): Promise<boolean> => {
-  const supabase = createClient();
-
   try {
-    // Obtener la información de la categoría (incluyendo la ruta de la imagen)
-    const { data: marcas, error: fetchError } = await supabase
-      .from("marcas")
-      .select("imagen")
-      .eq("id", id)
-      .single();
+    console.log(`🔍 Iniciando eliminación de marca ID: ${id}`);
+    console.log(`🔍 Tipo de ID: ${typeof id}, Valor: "${id}"`);
 
-    if (fetchError) {
-      console.error("Error al obtener la marcas:", fetchError);
-      return false;
-    }
+    const baseUrl = 'https://padel-cocha.vercel.app';
 
-    if (!marcas || !marcas.imagen) {
-      console.error("marcas no encontrada o no tiene imagen.");
-      return false;
-    }
+    console.log(`🌍 Llamando a API en: ${baseUrl}/api/eliminar-marca`);
 
-    // Eliminar la imagen del servidor
-    const imagePath = path.resolve(process.cwd(), 'public', marcas.imagen.slice(1)); // Construir la ruta completa de la imagen
-    try {
-      if (fs.existsSync(imagePath)) {
-        await fs.unlinkSync(imagePath); // Eliminar el archivo de imagen
-        console.log(`Imagen eliminada: ${imagePath}`);
-      } else {
-        console.warn('Imagen no encontrada en el servidor:', imagePath);
+    // Convertir ID a string explícitamente
+    const idString = String(id);
+    const body = JSON.stringify({ id: idString });
+    console.log(`📦 Body a enviar: ${body}`);
+
+    const response = await fetch(`${baseUrl}/api/eliminar-marca`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: body,
+      cache: 'no-store',
+    });
+
+    console.log(`📊 Estado de respuesta: ${response.status} ${response.statusText}`);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`❌ Error en la API (${response.status}):`, errorText);
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        console.error('Detalles del error:', errorData);
+      } catch {
+        console.error('Respuesta de error (no JSON):', errorText);
       }
-    } catch (fsError) {
-      console.error("Error al eliminar la imagen:", fsError);
-      // Si hay un error al eliminar la imagen, lo registramos pero continuamos con la eliminación de la categoría
-    }
-
-    // Eliminar la categoría de la base de datos
-    const { error: deleteError } = await supabase
-      .from("marcas")
-      .delete()
-      .eq("id", id);
-
-    if (deleteError) {
-      console.error("Error al eliminar la marcas:", deleteError);
+      
       return false;
     }
 
-    return true;
-  } catch (error) {
-    console.error("Error en eliminar marcas:", error);
+    const result = await response.json();
+    console.log('✅ Resultado de eliminación:', result);
+    
+    return result.success === true;
+
+  } catch (error: any) {
+    console.error('❌ Error en eliminar marca:', error.message || error);
+    console.error('Stack trace:', error.stack);
     return false;
   }
 };
