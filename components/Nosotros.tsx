@@ -53,21 +53,6 @@ export default function Nosotros() {
                   <p className="text-amber-600 font-medium mb-4">
                     Fundador de Punto Padel LF
                   </p>
-                  
-                  <div className="flex flex-wrap justify-center md:justify-start gap-4 mb-6">
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-gray-900">5+</div>
-                      <div className="text-sm text-gray-600">Años de experiencia</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-gray-900">1000+</div>
-                      <div className="text-sm text-gray-600">Clientes satisfechos</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xl font-bold text-gray-900">50+</div>
-                      <div className="text-sm text-gray-600">Marcas asociadas</div>
-                    </div>
-                  </div>
                 </div>
               </div>
 
@@ -115,5 +100,6 @@ export default function Nosotros() {
     </section>
   );
 }
+
 
 
