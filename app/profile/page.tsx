@@ -23,7 +23,7 @@ export default function ProfilePage() {
             </div>
           </div>
           
-          {/* Progress bar decorativa */}
+          {/* Progres bar decorativa */}
           <div className="h-2 bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full mb-2"></div>
           <div className="h-1 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 rounded-full opacity-70"></div>
         </div>
@@ -36,6 +36,7 @@ export default function ProfilePage() {
     </div>
   );
 }
+
 
 
 
