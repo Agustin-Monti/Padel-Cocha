@@ -13,7 +13,7 @@ type Producto = {
   imagen: string;
   tipo_id: string;
   color: string;
-  estado: string; // Agregar estado
+  estado: string;
   oferta_activa?: boolean;
   precio_oferta: number;
 };
@@ -25,27 +25,30 @@ export default function ProductosCategoryMarca() {
 
   const [productos, setProductos] = useState<Producto[]>([]);
   const [coloresDisponibles, setColoresDisponibles] = useState<string[]>([]);
-  const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]); // Nuevo estado
+  const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]);
   const [precioMinimo, setPrecioMinimo] = useState(0);
   const [precioMaximo, setPrecioMaximo] = useState(1000000);
   const [filtroColorSeleccionado, setFiltroColorSeleccionado] = useState<string | null>(null);
-  const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null); // Nuevo filtro
+  const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [nombreMarca, setNombreMarca] = useState<string>("");
 
   useEffect(() => {
     console.log("useEffect ejecutado con categoriaId:", categoriaId, "marcaId:", marcaId);
     if (categoriaId && marcaId) {
+      // Extraer nombre de marca del ID (si es necesario)
+      const marcaNombre = marcaId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+      setNombreMarca(marcaNombre);
+      
       getProductosPorCategoriaYMarca(categoriaId, marcaId).then((productos) => {
         console.log("Productos recibidos en cliente:", productos);
         setProductos(productos);
         
-        // Obtener colores únicos
         const colores = Array.from(new Set(productos.map((p) => p.color)));
         setColoresDisponibles(colores);
         
-        // Obtener estados únicos (si existen)
         const estados = Array.from(new Set(productos.map((p) => p.estado).filter(Boolean)));
-        setEstadosDisponibles(estados.sort()); // Ordenar alfabéticamente
+        setEstadosDisponibles(estados.sort());
       });
     }
   }, [categoriaId, marcaId]);
@@ -58,125 +61,190 @@ export default function ProductosCategoryMarca() {
   });
 
   const filtros = (
-    <>
+    <div className="space-y-6">
       <h2 className="text-lg font-semibold mb-4">Filtrar:</h2>
 
-      {/* Filtro por colores */}
-      <h3 className="text-md font-medium mt-4 mb-2">Colores</h3>
-      <ul className="border-b-2">
-        <li key="todos-colores" className="mb-4">
-          <label className="flex items-center space-x-4">
-            <input
-              type="radio"
-              name="color"
-              className="form-radio scale-150"
-              checked={filtroColorSeleccionado === null}
-              onChange={() => setFiltroColorSeleccionado(null)}
-            />
-            <span className="text-xl font-medium">Todos los colores</span>
-          </label>
-        </li>
-        
-        {coloresDisponibles.map((color) => (
-          <li key={color} className="mb-4">
-            <label className="flex items-center space-x-4">
-              <input
-                type="radio"
-                name="color"
-                className="form-radio scale-150"
-                checked={filtroColorSeleccionado === color}
-                onChange={() =>
-                  setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
-                }
-              />
-              <span className="text-xl font-medium">{color}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
+      {/* Información de marca */}
+      {nombreMarca && (
+        <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-blue-800 font-medium">Marca: <span className="font-bold">{nombreMarca}</span></p>
+        </div>
+      )}
 
-      {/* NUEVO: Filtro por estado */}
-      {estadosDisponibles.length > 0 && (
-        <>
-          <h3 className="text-md font-medium mt-4 mb-2">Estado</h3>
-          <ul className="border-b-2">
-            <li key="todos-estados" className="mb-4">
-              <label className="flex items-center space-x-4">
+      {/* Filtro por colores - CON ESTILOS PERSONALIZADOS */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Colores</h3>
+        <ul className="border-b-2 pb-4">
+          <li key="todos-colores" className="mb-3">
+            <label className="flex items-center space-x-3 cursor-pointer select-none">
+              <div className="relative">
                 <input
                   type="radio"
-                  name="estado"
-                  className="form-radio scale-150"
-                  checked={filtroEstadoSeleccionado === null}
-                  onChange={() => setFiltroEstadoSeleccionado(null)}
+                  name="color"
+                  className="sr-only"
+                  checked={filtroColorSeleccionado === null}
+                  onChange={() => setFiltroColorSeleccionado(null)}
                 />
-                <span className="text-xl font-medium">Todos los estados</span>
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                  ${filtroColorSeleccionado === null 
+                    ? 'border-blue-600 bg-blue-600' 
+                    : 'border-gray-400 bg-white'}`}>
+                  {filtroColorSeleccionado === null && (
+                    <div className="w-3 h-3 rounded-full bg-white"></div>
+                  )}
+                </div>
+              </div>
+              <span className="text-lg font-medium">Todos los colores</span>
+            </label>
+          </li>
+          
+          {coloresDisponibles.map((color) => (
+            <li key={color} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="color"
+                    className="sr-only"
+                    checked={filtroColorSeleccionado === color}
+                    onChange={() =>
+                      setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
+                    }
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${filtroColorSeleccionado === color 
+                      ? 'border-blue-600 bg-blue-600' 
+                      : 'border-gray-400 bg-white'}`}>
+                    {filtroColorSeleccionado === color && (
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg font-medium">{color}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Filtro por estado - CON ESTILOS PERSONALIZADOS */}
+      {estadosDisponibles.length > 0 && (
+        <div>
+          <h3 className="text-md font-medium mb-2">Estado</h3>
+          <ul className="border-b-2 pb-4">
+            <li key="todos-estados" className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="estado"
+                    className="sr-only"
+                    checked={filtroEstadoSeleccionado === null}
+                    onChange={() => setFiltroEstadoSeleccionado(null)}
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${filtroEstadoSeleccionado === null 
+                      ? 'border-blue-600 bg-blue-600' 
+                      : 'border-gray-400 bg-white'}`}>
+                    {filtroEstadoSeleccionado === null && (
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg font-medium">Todos los estados</span>
               </label>
             </li>
             
             {estadosDisponibles.map((estado) => (
-              <li key={estado} className="mb-4">
-                <label className="flex items-center space-x-4">
-                  <input
-                    type="radio"
-                    name="estado"
-                    className="form-radio scale-150"
-                    checked={filtroEstadoSeleccionado === estado}
-                    onChange={() =>
-                      setFiltroEstadoSeleccionado(filtroEstadoSeleccionado === estado ? null : estado)
-                    }
-                  />
-                  <span className="text-xl font-medium">
+              <li key={estado} className="mb-3">
+                <label className="flex items-center space-x-3 cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="estado"
+                      className="sr-only"
+                      checked={filtroEstadoSeleccionado === estado}
+                      onChange={() =>
+                        setFiltroEstadoSeleccionado(filtroEstadoSeleccionado === estado ? null : estado)
+                      }
+                    />
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${filtroEstadoSeleccionado === estado 
+                        ? 'border-blue-600 bg-blue-600' 
+                        : 'border-gray-400 bg-white'}`}>
+                      {filtroEstadoSeleccionado === estado && (
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-lg font-medium">
                     {estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase()}
                   </span>
                 </label>
               </li>
             ))}
           </ul>
-        </>
+        </div>
       )}
 
       {/* Filtro por rango de precio */}
-      <h3 className="text-md font-medium mt-4 mb-2">Rango de precio</h3>
-      <div className="flex flex-col space-y-2">
-        <div className="flex justify-between">
-          <span className="text-sm">Desde: ${precioMinimo}</span>
-          <span className="text-sm">Hasta: ${precioMaximo}</span>
+      <div>
+        <h3 className="text-md font-medium mb-2">Rango de precio</h3>
+        <div className="flex flex-col space-y-2">
+          <div className="flex justify-between">
+            <span className="text-sm">Desde: ${precioMinimo}</span>
+            <span className="text-sm">Hasta: ${precioMaximo}</span>
+          </div>
+          <input
+            type="range"
+            min={0}
+            max={1000000}
+            step={1000}
+            value={precioMinimo}
+            onChange={(e) => setPrecioMinimo(Number(e.target.value))}
+            className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+          />
+          <input
+            type="range"
+            min={0}
+            max={1000000}
+            step={1000}
+            value={precioMaximo}
+            onChange={(e) => setPrecioMaximo(Number(e.target.value))}
+            className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+          />
         </div>
-        <input
-          type="range"
-          min={0}
-          max={1000000}
-          value={precioMinimo}
-          onChange={(e) => setPrecioMinimo(Number(e.target.value))}
-          className="w-full"
-        />
-        <input
-          type="range"
-          min={0}
-          max={1000000}
-          value={precioMaximo}
-          onChange={(e) => setPrecioMaximo(Number(e.target.value))}
-          className="w-full"
-        />
       </div>
 
       {/* Botón para reiniciar filtros */}
       <button
         onClick={() => {
           setFiltroColorSeleccionado(null);
-          setFiltroEstadoSeleccionado(null); // Reiniciar también el filtro de estado
+          setFiltroEstadoSeleccionado(null);
           setPrecioMinimo(0);
           setPrecioMaximo(1000000);
         }}
-        className="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-2 rounded-md transition-all"
+        className="w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-3 rounded-md transition-all active:bg-gray-400"
       >
         Reiniciar filtros
       </button>
-    </>
+    </div>
   );
 
   return (
     <div className="flex flex-col lg:flex-row p-6 gap-6 items-start">
+      {/* Título de marca en móvil */}
+      <div className="lg:hidden w-full mb-4">
+        <div className="bg-blue-100 border-l-4 border-blue-500 p-3 rounded-r">
+          <h1 className="text-xl font-bold text-blue-800">
+            Marca: <span className="font-extrabold">{nombreMarca}</span>
+          </h1>
+          <p className="text-blue-600 mt-1">
+            Mostrando {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} de {nombreMarca}
+          </p>
+        </div>
+      </div>
+
       {/* Botón para filtros en móvil */}
       <div className="lg:hidden mb-4">
         <button
@@ -189,7 +257,9 @@ export default function ProductosCategoryMarca() {
       </div>
 
       {/* Sidebar de filtros en desktop */}
-      <aside className="hidden lg:block w-1/4 pr-6">{filtros}</aside>
+      <aside className="hidden lg:block w-1/4 pr-6">
+        {filtros}
+      </aside>
 
       {/* Modal de filtros en móvil */}
       {isModalOpen && (
@@ -216,7 +286,7 @@ export default function ProductosCategoryMarca() {
           productosFiltrados.map((producto) => {
             const mostrarOferta = producto.oferta_activa && producto.precio_oferta;
             const porcentajeDescuento = mostrarOferta
-              ? Math.round(100 - (producto.precio_oferta! * 100) / producto.precio)
+              ? Math.round(100 - (producto.precio_oferta * 100) / producto.precio)
               : 0;
 
             return (
@@ -290,8 +360,32 @@ export default function ProductosCategoryMarca() {
             );
           })
         ) : (
-          <div className="w-full flex justify-center items-center text-center py-20">
-            <p className="text-xl font-semibold text-gray-500">No hay productos disponibles.</p>
+          <div className="w-full col-span-4 flex justify-center items-center text-center py-20">
+            <div className="bg-white p-8 rounded-xl shadow-md max-w-md">
+              <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                No hay productos de {nombreMarca} disponibles
+              </h3>
+              <p className="text-gray-500 mb-4">
+                No encontramos productos de {nombreMarca} con los filtros aplicados.
+              </p>
+              <button
+                onClick={() => {
+                  setFiltroColorSeleccionado(null);
+                  setFiltroEstadoSeleccionado(null);
+                  setPrecioMinimo(0);
+                  setPrecioMaximo(1000000);
+                }}
+                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2 mb-2"
+              >
+                Reiniciar filtros
+              </button>
+              <Link 
+                href={`/products-category/${categoriaId}`}
+                className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-all"
+              >
+                Ver todos los productos
+              </Link>
+            </div>
           </div>
         )}
       </section>
