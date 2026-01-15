@@ -17,9 +17,9 @@ type Producto = {
   oferta_activa: any;
   precio_oferta: any;
   categoria_nombre?: any;
-  marca_nombre?: any; // Cambiado de marcas a marca_nombre
+  marca_nombre?: any;
   tipo_nombre?: any;
-  marca_id?: any; // Opcional si no viene siempre
+  marca_id?: any;
 };
 
 export default function ProductosCategoryEstado() {
@@ -41,7 +41,6 @@ export default function ProductosCategoryEstado() {
     console.log("useEffect ejecutado con categoriaId:", categoriaId, "estado:", estado);
     
     if (categoriaId && estado) {
-      // Capitalizar el nombre del estado para mostrarlo
       const estadoCapitalizado = estado.charAt(0).toUpperCase() + estado.slice(1);
       setNombreEstado(estadoCapitalizado);
 
@@ -49,21 +48,17 @@ export default function ProductosCategoryEstado() {
         console.log("Productos recibidos en cliente:", productos);
         setProductos(productos);
         
-        // Obtener colores únicos
         const colores = Array.from(new Set(productos.map((p) => p.color)));
         setColoresDisponibles(colores);
         
-        // Obtener marcas únicas - USANDO marca_nombre en lugar de marcas
         const marcasMap = new Map<string, string>();
         productos.forEach((producto) => {
           if (producto.marca_nombre) {
-            // Si no tenemos marca_id, generamos un ID temporal basado en el nombre
             const marcaId = producto.marca_nombre.toLowerCase().replace(/\s+/g, '-');
             marcasMap.set(marcaId, producto.marca_nombre);
           }
         });
         
-        // Convertir el Map a array de objetos
         const marcasArray = Array.from(marcasMap.entries()).map(([id, nombre]) => ({ id, nombre }));
         setMarcasDisponibles(marcasArray);
       });
@@ -74,7 +69,6 @@ export default function ProductosCategoryEstado() {
     const dentroRango = p.precio >= precioMinimo && p.precio <= precioMaximo;
     const cumpleColor = filtroColorSeleccionado ? p.color === filtroColorSeleccionado : true;
     
-    // Filtrar por marca - usando marca_nombre si no hay marca_id
     let cumpleMarca = true;
     if (filtroMarcaSeleccionada) {
       if (p.marca_id) {
@@ -96,71 +90,111 @@ export default function ProductosCategoryEstado() {
         <p className="text-blue-800 font-medium">Mostrando productos: <span className="font-bold">{nombreEstado}</span></p>
       </div>
 
-      {/* Filtro por colores */}
+      {/* Filtro por colores - CON ESTILOS PERSONALIZADOS */}
       <h3 className="text-md font-medium mt-4 mb-2">Colores</h3>
-      <ul className="border-b-2">
-        <li key="todos-colores" className="mb-4">
-          <label className="flex items-center space-x-4">
-            <input
-              type="radio"
-              name="color"
-              className="form-radio scale-150"
-              checked={filtroColorSeleccionado === null}
-              onChange={() => setFiltroColorSeleccionado(null)}
-            />
-            <span className="text-xl font-medium">Todos los colores</span>
+      <ul className="border-b-2 pb-4">
+        <li key="todos-colores" className="mb-3">
+          <label className="flex items-center space-x-3 cursor-pointer select-none">
+            <div className="relative">
+              <input
+                type="radio"
+                name="color"
+                className="sr-only"
+                checked={filtroColorSeleccionado === null}
+                onChange={() => setFiltroColorSeleccionado(null)}
+              />
+              <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                ${filtroColorSeleccionado === null 
+                  ? 'border-blue-600 bg-blue-600' 
+                  : 'border-gray-400 bg-white'}`}>
+                {filtroColorSeleccionado === null && (
+                  <div className="w-3 h-3 rounded-full bg-white"></div>
+                )}
+              </div>
+            </div>
+            <span className="text-lg font-medium">Todos los colores</span>
           </label>
         </li>
         
         {coloresDisponibles.map((color) => (
-          <li key={color} className="mb-4">
-            <label className="flex items-center space-x-4">
-              <input
-                type="radio"
-                name="color"
-                className="form-radio scale-150"
-                checked={filtroColorSeleccionado === color}
-                onChange={() =>
-                  setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
-                }
-              />
-              <span className="text-xl font-medium">{color}</span>
+          <li key={color} className="mb-3">
+            <label className="flex items-center space-x-3 cursor-pointer select-none">
+              <div className="relative">
+                <input
+                  type="radio"
+                  name="color"
+                  className="sr-only"
+                  checked={filtroColorSeleccionado === color}
+                  onChange={() =>
+                    setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
+                  }
+                />
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                  ${filtroColorSeleccionado === color 
+                    ? 'border-blue-600 bg-blue-600' 
+                    : 'border-gray-400 bg-white'}`}>
+                  {filtroColorSeleccionado === color && (
+                    <div className="w-3 h-3 rounded-full bg-white"></div>
+                  )}
+                </div>
+              </div>
+              <span className="text-lg font-medium">{color}</span>
             </label>
           </li>
         ))}
       </ul>
 
-      {/* Filtro por marcas */}
+      {/* Filtro por marcas - CON ESTILOS PERSONALIZADOS */}
       {marcasDisponibles.length > 0 && (
         <>
           <h3 className="text-md font-medium mt-4 mb-2">Marcas</h3>
-          <ul className="border-b-2">
-            <li key="todas-marcas" className="mb-4">
-              <label className="flex items-center space-x-4">
-                <input
-                  type="radio"
-                  name="marca"
-                  className="form-radio scale-150"
-                  checked={filtroMarcaSeleccionada === null}
-                  onChange={() => setFiltroMarcaSeleccionada(null)}
-                />
-                <span className="text-xl font-medium">Todas las marcas</span>
+          <ul className="border-b-2 pb-4">
+            <li key="todas-marcas" className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="marca"
+                    className="sr-only"
+                    checked={filtroMarcaSeleccionada === null}
+                    onChange={() => setFiltroMarcaSeleccionada(null)}
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${filtroMarcaSeleccionada === null 
+                      ? 'border-blue-600 bg-blue-600' 
+                      : 'border-gray-400 bg-white'}`}>
+                    {filtroMarcaSeleccionada === null && (
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg font-medium">Todas las marcas</span>
               </label>
             </li>
             
             {marcasDisponibles.map((marca) => (
-              <li key={marca.id} className="mb-4">
-                <label className="flex items-center space-x-4">
-                  <input
-                    type="radio"
-                    name="marca"
-                    className="form-radio scale-150"
-                    checked={filtroMarcaSeleccionada === marca.id}
-                    onChange={() =>
-                      setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
-                    }
-                  />
-                  <span className="text-xl font-medium">{marca.nombre}</span>
+              <li key={marca.id} className="mb-3">
+                <label className="flex items-center space-x-3 cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="marca"
+                      className="sr-only"
+                      checked={filtroMarcaSeleccionada === marca.id}
+                      onChange={() =>
+                        setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
+                      }
+                    />
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${filtroMarcaSeleccionada === marca.id 
+                        ? 'border-blue-600 bg-blue-600' 
+                        : 'border-gray-400 bg-white'}`}>
+                      {filtroMarcaSeleccionada === marca.id && (
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-lg font-medium">{marca.nombre}</span>
                 </label>
               </li>
             ))}
@@ -170,7 +204,7 @@ export default function ProductosCategoryEstado() {
 
       {/* Filtro por rango de precio */}
       <h3 className="text-md font-medium mt-4 mb-2">Rango de precio</h3>
-      <div className="flex flex-col space-y-2">
+      <div className="flex flex-col space-y-2 mb-4">
         <div className="flex justify-between">
           <span className="text-sm">Desde: ${precioMinimo}</span>
           <span className="text-sm">Hasta: ${precioMaximo}</span>
@@ -179,17 +213,19 @@ export default function ProductosCategoryEstado() {
           type="range"
           min={0}
           max={1000000}
+          step={1000}
           value={precioMinimo}
           onChange={(e) => setPrecioMinimo(Number(e.target.value))}
-          className="w-full"
+          className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
         />
         <input
           type="range"
           min={0}
           max={1000000}
+          step={1000}
           value={precioMaximo}
           onChange={(e) => setPrecioMaximo(Number(e.target.value))}
-          className="w-full"
+          className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
         />
       </div>
 
@@ -201,7 +237,7 @@ export default function ProductosCategoryEstado() {
           setPrecioMinimo(0);
           setPrecioMaximo(1000000);
         }}
-        className="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-2 rounded-md transition-all"
+        className="w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-3 rounded-md transition-all active:bg-gray-400"
       >
         Reiniciar filtros
       </button>
@@ -357,7 +393,7 @@ export default function ProductosCategoryEstado() {
                   setPrecioMinimo(0);
                   setPrecioMaximo(1000000);
                 }}
-                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2"
+                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2 mb-2"
               >
                 Reiniciar filtros
               </button>
@@ -374,5 +410,3 @@ export default function ProductosCategoryEstado() {
     </div>
   );
 }
-
-
