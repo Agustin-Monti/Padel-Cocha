@@ -33,11 +33,11 @@ export default function Nosotros() {
                 <div className="relative">
                   <div className="w-32 h-32 md:w-36 md:h-36 rounded-full overflow-hidden relative ring-4 ring-white shadow-xl">
                     <Image
-                      src="/cocha.jpeg"
+                      src="/cocha2.jpeg"
                       alt="Luciano Forti - Fundador"
                       fill
                       sizes="(max-width: 768px) 128px, 144px"
-                      className="object-cover"
+                      className="object-contain"
                       priority
                     />
                   </div>
@@ -115,4 +115,5 @@ export default function Nosotros() {
     </section>
   );
 }
+
 
