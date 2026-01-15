@@ -10,6 +10,7 @@ export type Producto = {
   imagen: string;
   tipo_id: string;
   color: string;
+  estado: string; // Agregar estado aquí
   oferta_activa: boolean; 
   precio_oferta: number;
   marca_id: string;
@@ -31,17 +32,27 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
   const [cantidadPorTipo, setCantidadPorTipo] = useState<Record<string, number>>({});
   const [coloresDisponibles, setColoresDisponibles] = useState<string[]>([]);
   const [marcasDisponibles, setMarcasDisponibles] = useState<{ id: string; nombre: string }[]>([]);
+  const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]); // Nuevo estado para estados
   const [filtroColorSeleccionado, setFiltroColorSeleccionado] = useState<string | null>(null);
   const [filtroMarcaSeleccionada, setFiltroMarcaSeleccionada] = useState<string | null>(null);
+  const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null); // Nuevo filtro estado
   const [precioMinimo, setPrecioMinimo] = useState(0);
   const [precioMaximo, setPrecioMaximo] = useState(1000000);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
     const cantidadMap: Record<string, number> = {};
+    const estadosSet = new Set<string>();
+    
     productos.forEach((producto) => {
       cantidadMap[producto.tipo_id] = (cantidadMap[producto.tipo_id] || 0) + 1;
+      
+      // Agregar estado al set si existe
+      if (producto.estado) {
+        estadosSet.add(producto.estado);
+      }
     });
+    
     setCantidadPorTipo(cantidadMap);
 
     const colores = Array.from(new Set(productos.map((producto) => producto.color)));
@@ -54,6 +65,10 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
       }
     });
     setMarcasDisponibles(Array.from(marcasMap.entries()).map(([id, nombre]) => ({ id, nombre })));
+    
+    // Ordenar estados alfabéticamente
+    const estadosOrdenados = Array.from(estadosSet).sort();
+    setEstadosDisponibles(estadosOrdenados);
   }, [productos]);
 
   const productosFiltrados = productos.filter((p) => {
@@ -61,7 +76,9 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
     const cumpleFiltroTipo = filtroSeleccionado ? p.tipo_id === filtroSeleccionado : true;
     const cumpleFiltroColor = filtroColorSeleccionado ? p.color === filtroColorSeleccionado : true;
     const cumpleFiltroMarca = filtroMarcaSeleccionada ? p.marca_id === filtroMarcaSeleccionada : true;
-    return cumpleFiltroTipo && cumpleFiltroColor && cumpleFiltroMarca && dentroRangoPrecio;
+    const cumpleFiltroEstado = filtroEstadoSeleccionado ? p.estado === filtroEstadoSeleccionado : true;
+    
+    return cumpleFiltroTipo && cumpleFiltroColor && cumpleFiltroMarca && cumpleFiltroEstado && dentroRangoPrecio;
   });
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -94,6 +111,9 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
               marcasDisponibles={marcasDisponibles}
               filtroMarcaSeleccionada={filtroMarcaSeleccionada}
               setFiltroMarcaSeleccionada={setFiltroMarcaSeleccionada}
+              estadosDisponibles={estadosDisponibles}
+              filtroEstadoSeleccionado={filtroEstadoSeleccionado}
+              setFiltroEstadoSeleccionado={setFiltroEstadoSeleccionado}
               precioMinimo={precioMinimo}
               setPrecioMinimo={setPrecioMinimo}
               precioMaximo={precioMaximo}
@@ -115,6 +135,9 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
           marcasDisponibles={marcasDisponibles}
           filtroMarcaSeleccionada={filtroMarcaSeleccionada}
           setFiltroMarcaSeleccionada={setFiltroMarcaSeleccionada}
+          estadosDisponibles={estadosDisponibles}
+          filtroEstadoSeleccionado={filtroEstadoSeleccionado}
+          setFiltroEstadoSeleccionado={setFiltroEstadoSeleccionado}
           precioMinimo={precioMinimo}
           setPrecioMinimo={setPrecioMinimo}
           precioMaximo={precioMaximo}
@@ -144,6 +167,14 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
                         -{porcentajeDescuento}%
                       </div>
                     )}
+                    
+                    {/* Etiqueta de estado si existe */}
+                    {producto.estado && (
+                      <div className="absolute top-2 right-2 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
+                        {producto.estado.charAt(0).toUpperCase() + producto.estado.slice(1).toLowerCase()}
+                      </div>
+                    )}
+                    
                     <Link href={`/products/${producto.id}`} prefetch={false}>
                       <div className="w-full h-[300px] flex items-center justify-center">
                         <img
@@ -208,7 +239,7 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
   );
 }
 
-// ⬇️ COMPONENTE FILTROS CORREGIDO
+// ⬇️ COMPONENTE FILTROS ACTUALIZADO CON ESTADO
 function Filtros({
   tiposProductos,
   cantidadPorTipo,
@@ -220,6 +251,9 @@ function Filtros({
   marcasDisponibles,
   filtroMarcaSeleccionada,
   setFiltroMarcaSeleccionada,
+  estadosDisponibles,
+  filtroEstadoSeleccionado,
+  setFiltroEstadoSeleccionado,
   precioMinimo,
   setPrecioMinimo,
   precioMaximo,
@@ -235,107 +269,163 @@ function Filtros({
   marcasDisponibles: { id: string; nombre: string }[];
   filtroMarcaSeleccionada: string | null;
   setFiltroMarcaSeleccionada: (value: string | null) => void;
+  estadosDisponibles: string[];
+  filtroEstadoSeleccionado: string | null;
+  setFiltroEstadoSeleccionado: (value: string | null) => void;
   precioMinimo: number;
   setPrecioMinimo: (value: number) => void;
   precioMaximo: number;
   setPrecioMaximo: (value: number) => void;
 }) {
   return (
-    <>
+    <div className="space-y-6">
       <h2 className="text-lg font-semibold mb-4">Filtrar:</h2>
 
-      <h3 className="text-md font-medium mb-2">Tipos de productos</h3>
-      <ul className="border-b-2">
-        {tiposProductos.map((tipo) => (
-          <li key={tipo.id} className="mb-4"> {/* KEY AGREGADO */}
-            <label className="flex items-center space-x-4">
-              <input
-                type="checkbox"
-                className="form-checkbox scale-150"
-                checked={filtroSeleccionado === tipo.id}
-                onChange={() => setFiltroSeleccionado(filtroSeleccionado === tipo.id ? null : tipo.id)}
-              />
-              <span className="text-xl font-medium">{tipo.nombre}</span>
-              {cantidadPorTipo[tipo.id] && (
-                <span className="ml-2 text-sm text-gray-500">({cantidadPorTipo[tipo.id]})</span>
-              )}
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      <h3 className="text-md font-medium mt-4 mb-2">Colores</h3>
-      <ul className="border-b-2">
-        {coloresDisponibles.map((color) => (
-          <li key={color} className="mb-4"> {/* KEY AGREGADO */}
-            <label className="flex items-center space-x-4">
-              <input
-                type="checkbox"
-                className="form-checkbox scale-150"
-                checked={filtroColorSeleccionado === color}
-                onChange={() => setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)}
-              />
-              <span className="text-xl font-medium">{color}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      <h3 className="text-md font-medium mt-4 mb-2">Marcas</h3>
-      <ul className="border-b-2">
-        {marcasDisponibles.map((marca) => (
-          <li key={marca.id} className="mb-4"> {/* KEY AGREGADO */}
-            <label className="flex items-center space-x-4">
-              <input
-                type="checkbox"
-                className="form-checkbox scale-150"
-                checked={filtroMarcaSeleccionada === marca.id}
-                onChange={() =>
-                  setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
-                }
-              />
-              <span className="text-xl font-medium">{marca.nombre}</span>
-            </label>
-          </li>
-        ))}
-      </ul>
-
-      <h3 className="text-md font-medium mt-4 mb-2">Rango de precio</h3>
-      <div className="flex flex-col space-y-2">
-        <div className="flex justify-between">
-          <span className="text-sm">Desde: ${precioMinimo}</span>
-          <span className="text-sm">Hasta: ${precioMaximo}</span>
-        </div>
-        <input
-          type="range"
-          min={0}
-          max={1000000}
-          value={precioMinimo}
-          onChange={(e) => setPrecioMinimo(Number(e.target.value))}
-          className="w-full"
-        />
-        <input
-          type="range"
-          min={0}
-          max={1000000}
-          value={precioMaximo}
-          onChange={(e) => setPrecioMaximo(Number(e.target.value))}
-          className="w-full"
-        />
+      {/* Filtro por colores */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Colores</h3>
+        <ul className="border-b-2 pb-4">
+          {coloresDisponibles.map((color) => (
+            <li key={color} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
+                  checked={filtroColorSeleccionado === color}
+                  onChange={() => setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)}
+                />
+                <span className="text-lg font-medium">{color}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
       </div>
 
+      {/* Filtro por marcas */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Marcas</h3>
+        <ul className="border-b-2 pb-4">
+          {marcasDisponibles.map((marca) => (
+            <li key={marca.id} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
+                  checked={filtroMarcaSeleccionada === marca.id}
+                  onChange={() =>
+                    setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
+                  }
+                />
+                <span className="text-lg font-medium">{marca.nombre}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Filtro por estado - CORREGIDO */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Estado</h3>
+        <ul className="border-b-2 pb-4">
+          <li key="todos-estados" className="mb-3">
+            <label className="flex items-center space-x-3 cursor-pointer select-none">
+              <div className="relative">
+                <input
+                  type="radio"
+                  name="estado"
+                  className="sr-only" // Ocultamos el input nativo
+                  checked={filtroEstadoSeleccionado === null}
+                  onChange={() => setFiltroEstadoSeleccionado(null)}
+                />
+                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                  ${filtroEstadoSeleccionado === null 
+                    ? 'border-blue-600 bg-blue-600' 
+                    : 'border-gray-400 bg-white'}`}>
+                  {filtroEstadoSeleccionado === null && (
+                    <div className="w-3 h-3 rounded-full bg-white"></div>
+                  )}
+                </div>
+              </div>
+              <span className="text-lg font-medium">Todos los estados</span>
+            </label>
+          </li>
+          
+          
+
+          {estadosDisponibles.map((estado) => (
+            <li key={estado} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="estado"
+                    className="sr-only" // Ocultamos el input nativo
+                    checked={filtroEstadoSeleccionado === estado}
+                    onChange={() => setFiltroEstadoSeleccionado(filtroEstadoSeleccionado === estado ? null : estado)}
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${filtroEstadoSeleccionado === estado 
+                      ? 'border-blue-600 bg-blue-600' 
+                      : 'border-gray-400 bg-white'}`}>
+                    {filtroEstadoSeleccionado === estado && (
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg font-medium">
+                  {estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase()}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Filtro por rango de precio */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Rango de precio</h3>
+        <div className="space-y-4">
+          <div className="flex justify-between">
+            <span className="text-sm">Desde: ${precioMinimo}</span>
+            <span className="text-sm">Hasta: ${precioMaximo}</span>
+          </div>
+          <div className="space-y-4">
+            <input
+              type="range"
+              min={0}
+              max={1000000}
+              step={1000}
+              value={precioMinimo}
+              onChange={(e) => setPrecioMinimo(Number(e.target.value))}
+              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+            />
+            <input
+              type="range"
+              min={0}
+              max={1000000}
+              step={1000}
+              value={precioMaximo}
+              onChange={(e) => setPrecioMaximo(Number(e.target.value))}
+              className="w-full h-2 bg-gray-300 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Botón para reiniciar filtros */}
       <button
         onClick={() => {
           setFiltroSeleccionado(null);
           setFiltroColorSeleccionado(null);
           setFiltroMarcaSeleccionada(null);
+          setFiltroEstadoSeleccionado(null);
           setPrecioMinimo(0);
           setPrecioMaximo(1000000);
         }}
-        className="mt-4 w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-2 rounded-md transition-all"
+        className="w-full bg-gray-200 hover:bg-gray-300 text-black font-semibold py-3 rounded-md transition-all active:bg-gray-400"
       >
         Reiniciar filtros
       </button>
-    </>
+    </div>
   );
 }
