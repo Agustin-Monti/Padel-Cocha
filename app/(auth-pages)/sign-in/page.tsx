@@ -13,15 +13,10 @@ export const metadata: Metadata = {
 export default function Login({
   searchParams,
 }: {
-  searchParams: { message?: string };
+  searchParams: { message?: string; error?: string };
 }) {
-  if (searchParams.message) {
-    return (
-      <div className="w-full flex-1 flex items-center h-screen justify-center p-4 bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600">
-        <FormMessage message={{ message: searchParams.message }} />
-      </div>
-    );
-  }
+  // Obtiene el mensaje de error de cualquiera de los dos parámetros
+  const errorMessage = searchParams.error || searchParams.message;
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600 px-4">
@@ -94,9 +89,11 @@ export default function Login({
             Iniciar sesión
           </SubmitButton>
 
-          {/* Mensaje */}
-          {searchParams.message && (
-            <FormMessage message={{ message: searchParams.message }} />
+          {/* Mensaje - Siempre visible si hay un mensaje */}
+          {errorMessage && (
+            <FormMessage 
+              message={{ error: errorMessage }}
+            />
           )}
         </form>
       </div>
