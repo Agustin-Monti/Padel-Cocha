@@ -48,7 +48,21 @@ export const signInAction = async (formData: FormData) => {
   });
 
   if (error) {
-    return encodedRedirect("error", "/sign-in", error.message);
+    // Traducción de mensajes de error comunes
+    let errorMessage = error.message;
+    
+    if (error.message.includes("Invalid login credentials") || 
+        error.message.includes("Invalid login credentials")) {
+      errorMessage = "Email o contraseña incorrectos";
+    } else if (error.message.includes("Email not confirmed")) {
+      errorMessage = "Por favor, confirma tu email antes de iniciar sesión";
+    } else if (error.message.includes("User not found")) {
+      errorMessage = "Usuario no encontrado";
+    } else if (error.message.includes("Invalid email")) {
+      errorMessage = "Email inválido";
+    }
+
+    return encodedRedirect("error", "/sign-in", errorMessage);
   }
 
   return redirect("/");
@@ -122,3 +136,4 @@ export const signOutAction = async () => {
   await supabase.auth.signOut();
   return redirect("/sign-in");
 };
+
