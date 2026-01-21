@@ -301,7 +301,8 @@ const Busqueda = ({ isOpen, onClose }: BusquedaProps) => {
                   
                   <div className="flex items-center gap-1 md:gap-2 order-1 md:order-2">
                     {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                      let pageNum;
+                      let pageNum: number; // ← Aquí declaras el tipo
+                  
                       if (totalPages <= 5) {
                         pageNum = i + 1;
                       } else if (page <= 3) {
@@ -387,3 +388,4 @@ const Busqueda = ({ isOpen, onClose }: BusquedaProps) => {
 };
 
 export default Busqueda;
+
