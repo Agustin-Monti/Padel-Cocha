@@ -151,7 +151,7 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
           {/* Botón de favoritos */}
           <button
             onClick={handleFavoritosClick}
-            className="relative p-2 text-gray-700 hover:text-red-600"
+            className="relative p-2 text-white hover:text-red-600"
           >
             <Heart
               size={24}
@@ -400,3 +400,4 @@ export const Header = ({ user, onOpenCarrito }: HeaderProps) => {
     </>
   );
 };
+
