@@ -10,7 +10,7 @@ export async function getProductosPorCategoria(id: string, tipo_producto_id: str
 
   let query = supabase
     .from("productos")
-    .select("*, marcas(id, nombre)") // Hacemos join con marcas
+    .select("*, marcas(id, nombre)") // join con marcas
     .eq("categoria_id", id);
 
   if (tipo_producto_id) {
@@ -258,4 +258,5 @@ export const getEstadosPorCategoria = async (categoriaId: number): Promise<Array
 
 
   
+
 
