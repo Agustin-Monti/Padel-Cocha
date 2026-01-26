@@ -12,10 +12,11 @@ type Producto = {
   precio: number;
   imagen: string;
   tipo_id: string;
-  color: string;
+  forma: string;
   estado: string;
   oferta_activa?: boolean;
   precio_oferta: number;
+  marcas?: { id: string; nombre: string }; // Agregado
 };
 
 export default function ProductosCategoryMarca() {
@@ -24,41 +25,131 @@ export default function ProductosCategoryMarca() {
   const marcaId = params?.marca ?? null;
 
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [coloresDisponibles, setColoresDisponibles] = useState<string[]>([]);
+  const [formatosDisponibles, setFormatosDisponibles] = useState<string[]>([]);
   const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]);
   const [precioMinimo, setPrecioMinimo] = useState(0);
   const [precioMaximo, setPrecioMaximo] = useState(1000000);
-  const [filtroColorSeleccionado, setFiltroColorSeleccionado] = useState<string | null>(null);
+  const [filtroFormatoSeleccionado, setFiltroFormatoSeleccionado] = useState<string | null>(null);
   const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nombreMarca, setNombreMarca] = useState<string>("");
+  const [cargando, setCargando] = useState(true); // Agregado para loading state
 
   useEffect(() => {
     console.log("useEffect ejecutado con categoriaId:", categoriaId, "marcaId:", marcaId);
-    if (categoriaId && marcaId) {
-      // Extraer nombre de marca del ID (si es necesario)
-      const marcaNombre = marcaId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-      setNombreMarca(marcaNombre);
-      
-      getProductosPorCategoriaYMarca(categoriaId, marcaId).then((productos) => {
-        console.log("Productos recibidos en cliente:", productos);
-        setProductos(productos);
+    
+    const cargarDatos = async () => {
+      if (categoriaId && marcaId) {
+        setCargando(true);
+        try {
+          const resultado = await getProductosPorCategoriaYMarca(categoriaId, marcaId);
+          
+          console.log("Resultado recibido:", resultado);
+          
+          // Establecer productos
+          setProductos(resultado.productos || []);
+          
+          // Establecer nombre de la marca desde los datos
+          if (resultado.marcaNombre) {
+            setNombreMarca(resultado.marcaNombre);
+          } else {
+            // Si no viene en los datos, intentar formatear el ID
+            const marcaNombreAlternativo = marcaId.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            setNombreMarca(marcaNombreAlternativo);
+          }
+          
+          // Obtener formatos únicos
+          const formatosUnicos = obtenerFormatosUnicos(resultado.productos || []);
+          setFormatosDisponibles(formatosUnicos);
+          
+          // Obtener estados únicos
+          const estados = obtenerEstadosUnicos(resultado.productos || []);
+          setEstadosDisponibles(estados);
+          
+        } catch (error) {
+          console.error("Error al cargar datos:", error);
+          setNombreMarca("Marca desconocida");
+        } finally {
+          setCargando(false);
+        }
+      }
+    };
+
+    cargarDatos();
+  }, [categoriaId, marcaId])
+  // Función para normalizar texto (eliminar espacios, minúsculas, etc.)
+  const normalizarTexto = (texto: string): string => {
+    return texto
+      .toString()
+      .trim()
+      .toLowerCase()
+      .normalize("NFD") // Normalizar caracteres acentuados
+      .replace(/[\u0300-\u036f]/g, ""); // Eliminar diacríticos
+  };
+
+  // Función para obtener formatos únicos y normalizados
+  const obtenerFormatosUnicos = (productos: Producto[]): string[] => {
+    const formatosMap = new Map<string, string>(); // Para mantener el formato original
+    
+    productos.forEach((producto) => {
+      if (producto.forma) {
+        const formatoNormalizado = normalizarTexto(producto.forma);
+        const formatoOriginal = producto.forma.trim();
         
-        const colores = Array.from(new Set(productos.map((p) => p.color)));
-        setColoresDisponibles(colores);
+        // Si no existe este formato normalizado, lo agregamos
+        if (!formatosMap.has(formatoNormalizado)) {
+          formatosMap.set(formatoNormalizado, formatoOriginal);
+        }
+      }
+    });
+    
+    // Convertir a array y ordenar alfabéticamente
+    return Array.from(formatosMap.values())
+      .sort((a, b) => a.localeCompare(b, 'es'));
+  };
+
+  // Función para obtener estados únicos y normalizados
+  const obtenerEstadosUnicos = (productos: Producto[]): string[] => {
+    const estadosMap = new Map<string, string>();
+    
+    productos.forEach((producto) => {
+      if (producto.estado) {
+        const estadoNormalizado = normalizarTexto(producto.estado);
+        const estadoOriginal = producto.estado.trim();
         
-        const estados = Array.from(new Set(productos.map((p) => p.estado).filter(Boolean)));
-        setEstadosDisponibles(estados.sort());
-      });
-    }
-  }, [categoriaId, marcaId]);
+        if (!estadosMap.has(estadoNormalizado)) {
+          estadosMap.set(estadoNormalizado, estadoOriginal);
+        }
+      }
+    });
+    
+    return Array.from(estadosMap.values())
+      .sort((a, b) => a.localeCompare(b, 'es'));
+  };
+
+  // Función para comparar si dos formatos son iguales (normalizados)
+  const formatosSonIguales = (formato1: string | null, formato2: string | null): boolean => {
+    if (!formato1 && !formato2) return true;
+    if (!formato1 || !formato2) return false;
+    return normalizarTexto(formato1) === normalizarTexto(formato2);
+  };
 
   const productosFiltrados = productos.filter((p) => {
     const dentroRango = p.precio >= precioMinimo && p.precio <= precioMaximo;
-    const cumpleColor = filtroColorSeleccionado ? p.color === filtroColorSeleccionado : true;
-    const cumpleEstado = filtroEstadoSeleccionado ? p.estado === filtroEstadoSeleccionado : true;
-    return dentroRango && cumpleColor && cumpleEstado;
+    const cumpleFormato = filtroFormatoSeleccionado 
+      ? formatosSonIguales(p.forma, filtroFormatoSeleccionado) 
+      : true;
+    const cumpleEstado = filtroEstadoSeleccionado 
+      ? normalizarTexto(p.estado || '') === normalizarTexto(filtroEstadoSeleccionado)
+      : true;
+    
+    return dentroRango && cumpleFormato && cumpleEstado;
   });
+
+  // Formatear el formato para mostrar (primera letra mayúscula)
+  const formatearTexto = (texto: string): string => {
+    return texto.charAt(0).toUpperCase() + texto.slice(1).toLowerCase();
+  };
 
   const filtros = (
     <div className="space-y-6">
@@ -68,66 +159,13 @@ export default function ProductosCategoryMarca() {
       {nombreMarca && (
         <div className="mb-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
           <p className="text-blue-800 font-medium">Marca: <span className="font-bold">{nombreMarca}</span></p>
+          <p className="text-sm text-blue-600 mt-1">
+            {productos.length} producto{productos.length !== 1 ? 's' : ''} disponible{productos.length !== 1 ? 's' : ''}
+          </p>
         </div>
       )}
 
-      {/* Filtro por colores - CON ESTILOS PERSONALIZADOS */}
-      <div>
-        <h3 className="text-md font-medium mb-2">Colores</h3>
-        <ul className="border-b-2 pb-4">
-          <li key="todos-colores" className="mb-3">
-            <label className="flex items-center space-x-3 cursor-pointer select-none">
-              <div className="relative">
-                <input
-                  type="radio"
-                  name="color"
-                  className="sr-only"
-                  checked={filtroColorSeleccionado === null}
-                  onChange={() => setFiltroColorSeleccionado(null)}
-                />
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                  ${filtroColorSeleccionado === null 
-                    ? 'border-blue-600 bg-blue-600' 
-                    : 'border-gray-400 bg-white'}`}>
-                  {filtroColorSeleccionado === null && (
-                    <div className="w-3 h-3 rounded-full bg-white"></div>
-                  )}
-                </div>
-              </div>
-              <span className="text-lg font-medium">Todos los colores</span>
-            </label>
-          </li>
-          
-          {coloresDisponibles.map((color) => (
-            <li key={color} className="mb-3">
-              <label className="flex items-center space-x-3 cursor-pointer select-none">
-                <div className="relative">
-                  <input
-                    type="radio"
-                    name="color"
-                    className="sr-only"
-                    checked={filtroColorSeleccionado === color}
-                    onChange={() =>
-                      setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)
-                    }
-                  />
-                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                    ${filtroColorSeleccionado === color 
-                      ? 'border-blue-600 bg-blue-600' 
-                      : 'border-gray-400 bg-white'}`}>
-                    {filtroColorSeleccionado === color && (
-                      <div className="w-3 h-3 rounded-full bg-white"></div>
-                    )}
-                  </div>
-                </div>
-                <span className="text-lg font-medium">{color}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Filtro por estado - CON ESTILOS PERSONALIZADOS */}
+      {/* 1. FILTRO POR ESTADO (PRIMERO) */}
       {estadosDisponibles.length > 0 && (
         <div>
           <h3 className="text-md font-medium mb-2">Estado</h3>
@@ -163,22 +201,22 @@ export default function ProductosCategoryMarca() {
                       type="radio"
                       name="estado"
                       className="sr-only"
-                      checked={filtroEstadoSeleccionado === estado}
+                      checked={formatosSonIguales(filtroEstadoSeleccionado, estado)}
                       onChange={() =>
                         setFiltroEstadoSeleccionado(filtroEstadoSeleccionado === estado ? null : estado)
                       }
                     />
                     <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
-                      ${filtroEstadoSeleccionado === estado 
+                      ${formatosSonIguales(filtroEstadoSeleccionado, estado) 
                         ? 'border-blue-600 bg-blue-600' 
                         : 'border-gray-400 bg-white'}`}>
-                      {filtroEstadoSeleccionado === estado && (
+                      {formatosSonIguales(filtroEstadoSeleccionado, estado) && (
                         <div className="w-3 h-3 rounded-full bg-white"></div>
                       )}
                     </div>
                   </div>
                   <span className="text-lg font-medium">
-                    {estado.charAt(0).toUpperCase() + estado.slice(1).toLowerCase()}
+                    {formatearTexto(estado)}
                   </span>
                 </label>
               </li>
@@ -187,7 +225,69 @@ export default function ProductosCategoryMarca() {
         </div>
       )}
 
-      {/* Filtro por rango de precio */}
+      {/* 2. FILTRO POR FORMATO (SEGUNDO) */}
+      {formatosDisponibles.length > 0 && (
+        <div>
+          <h3 className="text-md font-medium mb-2">Formatos</h3>
+          <ul className="border-b-2 pb-4">
+            <li key="todos-formatos" className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <div className="relative">
+                  <input
+                    type="radio"
+                    name="formato"
+                    className="sr-only"
+                    checked={filtroFormatoSeleccionado === null}
+                    onChange={() => setFiltroFormatoSeleccionado(null)}
+                  />
+                  <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                    ${filtroFormatoSeleccionado === null 
+                      ? 'border-blue-600 bg-blue-600' 
+                      : 'border-gray-400 bg-white'}`}>
+                    {filtroFormatoSeleccionado === null && (
+                      <div className="w-3 h-3 rounded-full bg-white"></div>
+                    )}
+                  </div>
+                </div>
+                <span className="text-lg font-medium">Todos los formatos</span>
+              </label>
+            </li>
+            
+            {formatosDisponibles.map((formato) => (
+              <li key={formato} className="mb-3">
+                <label className="flex items-center space-x-3 cursor-pointer select-none">
+                  <div className="relative">
+                    <input
+                      type="radio"
+                      name="formato"
+                      className="sr-only"
+                      checked={formatosSonIguales(filtroFormatoSeleccionado, formato)}
+                      onChange={() =>
+                        setFiltroFormatoSeleccionado(
+                          formatosSonIguales(filtroFormatoSeleccionado, formato) ? null : formato
+                        )
+                      }
+                    />
+                    <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center
+                      ${formatosSonIguales(filtroFormatoSeleccionado, formato) 
+                        ? 'border-blue-600 bg-blue-600' 
+                        : 'border-gray-400 bg-white'}`}>
+                      {formatosSonIguales(filtroFormatoSeleccionado, formato) && (
+                        <div className="w-3 h-3 rounded-full bg-white"></div>
+                      )}
+                    </div>
+                  </div>
+                  <span className="text-lg font-medium">
+                    {formatearTexto(formato)}
+                  </span>
+                </label>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* 3. FILTRO POR RANGO DE PRECIO */}
       <div>
         <h3 className="text-md font-medium mb-2">Rango de precio</h3>
         <div className="flex flex-col space-y-2">
@@ -219,7 +319,7 @@ export default function ProductosCategoryMarca() {
       {/* Botón para reiniciar filtros */}
       <button
         onClick={() => {
-          setFiltroColorSeleccionado(null);
+          setFiltroFormatoSeleccionado(null);
           setFiltroEstadoSeleccionado(null);
           setPrecioMinimo(0);
           setPrecioMaximo(1000000);
@@ -304,7 +404,7 @@ export default function ProductosCategoryMarca() {
                     {/* Etiqueta de estado si existe */}
                     {producto.estado && (
                       <div className="absolute top-2 right-2 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
-                        {producto.estado.charAt(0).toUpperCase() + producto.estado.slice(1).toLowerCase()}
+                        {formatearTexto(producto.estado)}
                       </div>
                     )}
                     
@@ -370,7 +470,7 @@ export default function ProductosCategoryMarca() {
               </p>
               <button
                 onClick={() => {
-                  setFiltroColorSeleccionado(null);
+                  setFiltroFormatoSeleccionado(null);
                   setFiltroEstadoSeleccionado(null);
                   setPrecioMinimo(0);
                   setPrecioMaximo(1000000);
