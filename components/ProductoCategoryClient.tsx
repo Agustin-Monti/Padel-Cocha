@@ -9,8 +9,8 @@ export type Producto = {
   precio: number;
   imagen: string;
   tipo_id: string;
-  color: string;
-  estado: string; // Agregar estado aquí
+  forma: string; // Cambiado de "color" a "forma"
+  estado: string;
   oferta_activa: boolean; 
   precio_oferta: number;
   marca_id: string;
@@ -30,12 +30,12 @@ interface Props {
 export default function ProductoCategoryClient({ productos, tiposProductos }: Props) {
   const [filtroSeleccionado, setFiltroSeleccionado] = useState<string | null>(null);
   const [cantidadPorTipo, setCantidadPorTipo] = useState<Record<string, number>>({});
-  const [coloresDisponibles, setColoresDisponibles] = useState<string[]>([]);
+  const [formatosDisponibles, setFormatosDisponibles] = useState<string[]>([]); // Cambiado de colores a formatos
   const [marcasDisponibles, setMarcasDisponibles] = useState<{ id: string; nombre: string }[]>([]);
-  const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]); // Nuevo estado para estados
-  const [filtroColorSeleccionado, setFiltroColorSeleccionado] = useState<string | null>(null);
+  const [estadosDisponibles, setEstadosDisponibles] = useState<string[]>([]);
+  const [filtroFormatoSeleccionado, setFiltroFormatoSeleccionado] = useState<string | null>(null); // Cambiado de color a formato
   const [filtroMarcaSeleccionada, setFiltroMarcaSeleccionada] = useState<string | null>(null);
-  const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null); // Nuevo filtro estado
+  const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null);
   const [precioMinimo, setPrecioMinimo] = useState(0);
   const [precioMaximo, setPrecioMaximo] = useState(1000000);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -43,6 +43,7 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
   useEffect(() => {
     const cantidadMap: Record<string, number> = {};
     const estadosSet = new Set<string>();
+    const formatosSet = new Set<string>(); // Cambiado de colores a formatos
     
     productos.forEach((producto) => {
       cantidadMap[producto.tipo_id] = (cantidadMap[producto.tipo_id] || 0) + 1;
@@ -51,12 +52,18 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
       if (producto.estado) {
         estadosSet.add(producto.estado);
       }
+      
+      // Agregar formato al set si existe
+      if (producto.forma) {
+        formatosSet.add(producto.forma);
+      }
     });
     
     setCantidadPorTipo(cantidadMap);
 
-    const colores = Array.from(new Set(productos.map((producto) => producto.color)));
-    setColoresDisponibles(colores);
+    // Ordenar formatos alfabéticamente
+    const formatosOrdenados = Array.from(formatosSet).sort();
+    setFormatosDisponibles(formatosOrdenados);
 
     const marcasMap = new Map<string, string>();
     productos.forEach((producto) => {
@@ -74,11 +81,11 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
   const productosFiltrados = productos.filter((p) => {
     const dentroRangoPrecio = p.precio >= precioMinimo && p.precio <= precioMaximo;
     const cumpleFiltroTipo = filtroSeleccionado ? p.tipo_id === filtroSeleccionado : true;
-    const cumpleFiltroColor = filtroColorSeleccionado ? p.color === filtroColorSeleccionado : true;
+    const cumpleFiltroFormato = filtroFormatoSeleccionado ? p.forma === filtroFormatoSeleccionado : true; // Cambiado de color a formato
     const cumpleFiltroMarca = filtroMarcaSeleccionada ? p.marca_id === filtroMarcaSeleccionada : true;
     const cumpleFiltroEstado = filtroEstadoSeleccionado ? p.estado === filtroEstadoSeleccionado : true;
     
-    return cumpleFiltroTipo && cumpleFiltroColor && cumpleFiltroMarca && cumpleFiltroEstado && dentroRangoPrecio;
+    return cumpleFiltroTipo && cumpleFiltroFormato && cumpleFiltroMarca && cumpleFiltroEstado && dentroRangoPrecio;
   });
 
   const handleOutsideClick = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -105,9 +112,9 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
               cantidadPorTipo={cantidadPorTipo}
               filtroSeleccionado={filtroSeleccionado}
               setFiltroSeleccionado={setFiltroSeleccionado}
-              coloresDisponibles={coloresDisponibles}
-              filtroColorSeleccionado={filtroColorSeleccionado}
-              setFiltroColorSeleccionado={setFiltroColorSeleccionado}
+              formatosDisponibles={formatosDisponibles} // Cambiado
+              filtroFormatoSeleccionado={filtroFormatoSeleccionado} // Cambiado
+              setFiltroFormatoSeleccionado={setFiltroFormatoSeleccionado} // Cambiado
               marcasDisponibles={marcasDisponibles}
               filtroMarcaSeleccionada={filtroMarcaSeleccionada}
               setFiltroMarcaSeleccionada={setFiltroMarcaSeleccionada}
@@ -129,9 +136,9 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
           cantidadPorTipo={cantidadPorTipo}
           filtroSeleccionado={filtroSeleccionado}
           setFiltroSeleccionado={setFiltroSeleccionado}
-          coloresDisponibles={coloresDisponibles}
-          filtroColorSeleccionado={filtroColorSeleccionado}
-          setFiltroColorSeleccionado={setFiltroColorSeleccionado}
+          formatosDisponibles={formatosDisponibles} // Cambiado
+          filtroFormatoSeleccionado={filtroFormatoSeleccionado} // Cambiado
+          setFiltroFormatoSeleccionado={setFiltroFormatoSeleccionado} // Cambiado
           marcasDisponibles={marcasDisponibles}
           filtroMarcaSeleccionada={filtroMarcaSeleccionada}
           setFiltroMarcaSeleccionada={setFiltroMarcaSeleccionada}
@@ -239,15 +246,15 @@ export default function ProductoCategoryClient({ productos, tiposProductos }: Pr
   );
 }
 
-// ⬇️ COMPONENTE FILTROS ACTUALIZADO CON ESTADO
+// ⬇️ COMPONENTE FILTROS ACTUALIZADO CON NUEVO ORDEN Y FORMATOS
 function Filtros({
   tiposProductos,
   cantidadPorTipo,
   filtroSeleccionado,
   setFiltroSeleccionado,
-  coloresDisponibles,
-  filtroColorSeleccionado,
-  setFiltroColorSeleccionado,
+  formatosDisponibles, // Cambiado de colores a formatos
+  filtroFormatoSeleccionado, // Cambiado
+  setFiltroFormatoSeleccionado, // Cambiado
   marcasDisponibles,
   filtroMarcaSeleccionada,
   setFiltroMarcaSeleccionada,
@@ -263,9 +270,9 @@ function Filtros({
   cantidadPorTipo: Record<string, number>;
   filtroSeleccionado: string | null;
   setFiltroSeleccionado: (value: string | null) => void;
-  coloresDisponibles: string[];
-  filtroColorSeleccionado: string | null;
-  setFiltroColorSeleccionado: (value: string | null) => void;
+  formatosDisponibles: string[]; // Cambiado
+  filtroFormatoSeleccionado: string | null; // Cambiado
+  setFiltroFormatoSeleccionado: (value: string | null) => void; // Cambiado
   marcasDisponibles: { id: string; nombre: string }[];
   filtroMarcaSeleccionada: string | null;
   setFiltroMarcaSeleccionada: (value: string | null) => void;
@@ -281,49 +288,7 @@ function Filtros({
     <div className="space-y-6">
       <h2 className="text-lg font-semibold mb-4">Filtrar:</h2>
 
-      {/* Filtro por colores */}
-      <div>
-        <h3 className="text-md font-medium mb-2">Colores</h3>
-        <ul className="border-b-2 pb-4">
-          {coloresDisponibles.map((color) => (
-            <li key={color} className="mb-3">
-              <label className="flex items-center space-x-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
-                  checked={filtroColorSeleccionado === color}
-                  onChange={() => setFiltroColorSeleccionado(filtroColorSeleccionado === color ? null : color)}
-                />
-                <span className="text-lg font-medium">{color}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Filtro por marcas */}
-      <div>
-        <h3 className="text-md font-medium mb-2">Marcas</h3>
-        <ul className="border-b-2 pb-4">
-          {marcasDisponibles.map((marca) => (
-            <li key={marca.id} className="mb-3">
-              <label className="flex items-center space-x-3 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
-                  checked={filtroMarcaSeleccionada === marca.id}
-                  onChange={() =>
-                    setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
-                  }
-                />
-                <span className="text-lg font-medium">{marca.nombre}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Filtro por estado - CORREGIDO */}
+      {/* 1. FILTRO POR ESTADO (PRIMERO) */}
       <div>
         <h3 className="text-md font-medium mb-2">Estado</h3>
         <ul className="border-b-2 pb-4">
@@ -333,7 +298,7 @@ function Filtros({
                 <input
                   type="radio"
                   name="estado"
-                  className="sr-only" // Ocultamos el input nativo
+                  className="sr-only"
                   checked={filtroEstadoSeleccionado === null}
                   onChange={() => setFiltroEstadoSeleccionado(null)}
                 />
@@ -350,8 +315,6 @@ function Filtros({
             </label>
           </li>
           
-          
-
           {estadosDisponibles.map((estado) => (
             <li key={estado} className="mb-3">
               <label className="flex items-center space-x-3 cursor-pointer select-none">
@@ -359,7 +322,7 @@ function Filtros({
                   <input
                     type="radio"
                     name="estado"
-                    className="sr-only" // Ocultamos el input nativo
+                    className="sr-only"
                     checked={filtroEstadoSeleccionado === estado}
                     onChange={() => setFiltroEstadoSeleccionado(filtroEstadoSeleccionado === estado ? null : estado)}
                   />
@@ -381,7 +344,51 @@ function Filtros({
         </ul>
       </div>
 
-      {/* Filtro por rango de precio */}
+      {/* 2. FILTRO POR MARCA (SEGUNDO) */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Marcas</h3>
+        <ul className="border-b-2 pb-4">
+          {marcasDisponibles.map((marca) => (
+            <li key={marca.id} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
+                  checked={filtroMarcaSeleccionada === marca.id}
+                  onChange={() =>
+                    setFiltroMarcaSeleccionada(filtroMarcaSeleccionada === marca.id ? null : marca.id)
+                  }
+                />
+                <span className="text-lg font-medium">{marca.nombre}</span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 3. FILTRO POR FORMATO (TERCERO - REEMPLAZA A COLORES) */}
+      <div>
+        <h3 className="text-md font-medium mb-2">Formatos</h3>
+        <ul className="border-b-2 pb-4">
+          {formatosDisponibles.map((formato) => (
+            <li key={formato} className="mb-3">
+              <label className="flex items-center space-x-3 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  className="form-checkbox w-5 h-5 md:scale-150 touch-manipulation"
+                  checked={filtroFormatoSeleccionado === formato}
+                  onChange={() => setFiltroFormatoSeleccionado(filtroFormatoSeleccionado === formato ? null : formato)}
+                />
+                <span className="text-lg font-medium">
+                  {formato.charAt(0).toUpperCase() + formato.slice(1).toLowerCase()}
+                </span>
+              </label>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* 4. FILTRO POR RANGO DE PRECIO */}
       <div>
         <h3 className="text-md font-medium mb-2">Rango de precio</h3>
         <div className="space-y-4">
@@ -416,7 +423,7 @@ function Filtros({
       <button
         onClick={() => {
           setFiltroSeleccionado(null);
-          setFiltroColorSeleccionado(null);
+          setFiltroFormatoSeleccionado(null); // Cambiado
           setFiltroMarcaSeleccionada(null);
           setFiltroEstadoSeleccionado(null);
           setPrecioMinimo(0);
