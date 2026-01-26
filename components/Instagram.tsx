@@ -27,16 +27,16 @@ export default function Instagram() {
   const website = "www.puntopadellf.com";
   
   const stats = {
-    posts: 63,
-    followers: 1959,
-    following: 1632
+    posts: 68,
+    followers: 2059,
+    following: 1704
   };
 
   const recentPosts: Post[] = [
     {
       id: "1",
-      imageUrl: "/instagram/post1.jpg",
-      link: "https://www.instagram.com/p/DCXviVEP69K/",
+      imageUrl: "/instagram/post1.jpeg",
+      link: "https://www.instagram.com/p/DIKe7WGvI0p/",
       alt: "Nueva paleta de pádel",
       likes: "142",
       caption: "¡Nueva colección llegó! 🎾 La paleta que todos estaban esperando...",
@@ -45,8 +45,8 @@ export default function Instagram() {
     },
     {
       id: "2",
-      imageUrl: "/instagram/post2.jpg",
-      link: "https://www.instagram.com/p/DFdzMKVv4-b/",
+      imageUrl: "/instagram/post2.jpeg",
+      link: "https://www.instagram.com/p/DM0M5TouZn-/",
       alt: "Clínica de pádel",
       likes: "85",
       caption: "Clínica exclusiva con nuestro equipo profesional 🏅",
@@ -55,8 +55,8 @@ export default function Instagram() {
     },
     {
       id: "3",
-      imageUrl: "/instagram/post3.jpg",
-      link: "https://www.instagram.com/p/C9fAinku6jG/",
+      imageUrl: "/instagram/post3.jpeg",
+      link: "https://www.instagram.com/p/DNQW9z_uqam/",
       alt: "Productos destacados",
       likes: "97",
       caption: "Los más vendidos del mes 🔥 No te quedes sin el tuyo...",
@@ -65,8 +65,8 @@ export default function Instagram() {
     },
     {
       id: "4",
-      imageUrl: "/instagram/post1.jpg", // Cambiar por imagen real
-      link: "#",
+      imageUrl: "/instagram/post4.jpg", // Cambiar por imagen real
+      link: "https://www.instagram.com/p/DT-oe_CjuQ3/?img_index=1",
       alt: "Torneo interno",
       likes: "203",
       caption: "Gran final del torneo interno 🏆",
@@ -75,8 +75,8 @@ export default function Instagram() {
     },
     {
       id: "5",
-      imageUrl: "/instagram/post2.jpg", // Cambiar por imagen real
-      link: "#",
+      imageUrl: "/instagram/post5.jpeg", // Cambiar por imagen real
+      link: "https://www.instagram.com/p/DS8kJ0ijgU0/",
       alt: "Ofertas especiales",
       likes: "156",
       caption: "Ofertas de temporada ✨",
@@ -85,8 +85,8 @@ export default function Instagram() {
     },
     {
       id: "6",
-      imageUrl: "/instagram/post3.jpg", // Cambiar por imagen real
-      link: "#",
+      imageUrl: "/instagram/post6.jpg", // Cambiar por imagen real
+      link: "https://www.instagram.com/p/DRr4B2ajs97/?img_index=1",
       alt: "Nuevas zapatillas",
       likes: "189",
       caption: "Las zapatillas que revolucionan el juego 👟",
