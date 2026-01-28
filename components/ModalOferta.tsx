@@ -177,7 +177,7 @@ const ModalOferta: React.FC<ModalOfertaProps> = ({
                 </div>
               </div>
 
-              {/* Descuentos rápidos - SIEMPRE VISIBLE */}
+              {/* Descuentos rápidos - SIEMPRE VISIBLEe */}
               {ofertaActiva && (
                 <div className="border border-gray-300 rounded-lg p-4 bg-white">
                   <h4 className="font-bold text-gray-700 mb-3">Descuentos Rápidos</h4>
@@ -408,3 +408,4 @@ const ModalOferta: React.FC<ModalOfertaProps> = ({
 };
 
 export default ModalOferta;
+
