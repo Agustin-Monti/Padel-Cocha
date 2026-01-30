@@ -639,7 +639,7 @@ export const getProductosPorCategoriaYEstado = async (
       precio: producto.precio,
       imagen: producto.imagen,
       tipo_id: producto.tipo_id.toString(),
-      color: producto.color,
+      forma: producto.forma,
       estado: producto.estado,
       oferta_activa: producto.oferta_activa || false,
       precio_oferta: producto.precio_oferta || producto.precio,
@@ -731,6 +731,4 @@ export const getEstadosPorCategoria = async (categoriaId: number): Promise<Array
 
 
  
-
-
 
