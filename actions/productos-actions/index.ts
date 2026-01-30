@@ -151,6 +151,23 @@ export const fetchProductos = async () => {
   return productosConGaleria;
 };
 
+export const buscarProductosAdmin = async (nombre: string) => {
+  const supabase = createClient();
+  
+  const { data, error } = await supabase
+    .from('productos')
+    .select('*')
+    .ilike('nombre', `%${nombre}%`)
+    .order('nombre', { ascending: true });
+
+  if (error) {
+    console.error('Error buscando productos:', error);
+    return [];
+  }
+
+  return data;
+};
+
 
 export async function getProductoById(id: string) {
     const supabase = createClient();
@@ -319,7 +336,7 @@ export async function eliminarProductoById(productoId: string | number): Promise
     const idString = String(productoId).trim();
     
     // Usar localhost directamente para evitar problemas
-    const baseUrl = 'http://localhost:3000';
+    const baseUrl = 'https://padel-cocha.vercel.app';
     const apiUrl = `${baseUrl}/api/eliminar-producto-id`;
     
     console.log('🌐 Llamando a:', apiUrl);
