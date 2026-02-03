@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useFavoritos } from "@/context/FavoritosContext";
@@ -28,24 +28,24 @@ interface Producto {
   categoria_id: number;
   marca_id: number;
   tipo_id: number;
-  material : string;
-  capacidad : string;
-  origen : string;
-  talle : string;
-  modelo : string;
-  medidas : string;
-  forma : string;
-  balance : string;
-  nucleo : string;
-  acabado : string;
-  marco : string;
-  potencia : number;
-  control : number;
-  juego : string;
-  ancho : string;
-  largo : string;
-  textura : string;
-  color : string;
+  material: string;
+  capacidad: string;
+  origen: string;
+  talle: string;
+  modelo: string;
+  medidas: string;
+  forma: string;
+  balance: string;
+  nucleo: string;
+  acabado: string;
+  marco: string;
+  potencia: number;
+  control: number;
+  juego: string;
+  ancho: string;
+  largo: string;
+  textura: string;
+  color: string;
 }
 
 interface ProductoRelacionado {
@@ -64,7 +64,6 @@ interface Props {
 
 export default function ProductoDetailClient({ producto, relacionados }: Props) {
   const [imagenPrincipal, setImagenPrincipal] = useState<string | null>(producto.imagen);
-  const [cantidad, setCantidad] = useState(1);
   const [isCarritoOpen, setIsCarritoOpen] = useState(false);
   const [carritoModificado, setCarritoModificado] = useState(false);
   const [openDevolucion, setOpenDevolucion] = useState(false);
@@ -74,21 +73,220 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   const [marcaNombre, setMarcaNombre] = useState<string | null>(null);
   const [talleSeleccionado, setTalleSeleccionado] = useState<string | null>(null);
   const [tallesDisponibles, setTallesDisponibles] = useState<Record<string, number>>({});
-
-  // Estados para el zoom
+  
+  // Estados para el zoom en desktop
   const [isZoomed, setIsZoomed] = useState(false);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isMobileZoom, setIsMobileZoom] = useState(false);
-  const [mobileTransform, setMobileTransform] = useState({ scale: 1, translateX: 0, translateY: 0 });
+  const [zoomLevel, setZoomLevel] = useState(2);
+  const [cursorPosition, setCursorPosition] = useState({ x: 50, y: 50 });
+  const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
+  
+  // Estados para el zoom en móvil
+  const [mobileZoom, setMobileZoom] = useState({
+    isZoomed: false,
+    scale: 1,
+    translateX: 0,
+    translateY: 0,
+    lastTouchX: 0,
+    lastTouchY: 0,
+    isMoving: false
+  });
   
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomContainerRef = useRef<HTMLDivElement>(null);
+  const mobileImageRef = useRef<HTMLImageElement>(null);
+  const scrollYRef = useRef<number>(0); // Para guardar la posición del scroll
   const router = useRouter();
   const supabase = createClient();
   const [showBurst, setShowBurst] = useState(false);
+
   const { esFavorito, verificarFavorito, addFavorito, removeFavorito } = useFavoritos();
 
+  // ==================== FUNCIONES PARA BLOQUEAR/DESBLOQUEAR SCROLL MEJORADAS ====================
+  
+  const lockScroll = useCallback(() => {
+    // Guardar la posición actual del scroll
+    scrollYRef.current = window.scrollY;
+    
+    // Aplicar estilos para bloquear el scroll de forma suave
+    document.body.style.position = 'fixed';
+    document.body.style.top = `-${scrollYRef.current}px`;
+    document.body.style.left = '0';
+    document.body.style.right = '0';
+    document.body.style.overflow = 'hidden';
+    document.body.style.width = '100%';
+    document.body.style.height = '100%';
+    
+    // Compensar la barra de scroll si es visible
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
+  }, []);
+
+  const unlockScroll = useCallback(() => {
+    // Restaurar los estilos del body
+    document.body.style.position = '';
+    document.body.style.top = '';
+    document.body.style.left = '';
+    document.body.style.right = '';
+    document.body.style.overflow = '';
+    document.body.style.width = '';
+    document.body.style.height = '';
+    document.body.style.paddingRight = '';
+    
+    // Restaurar la posición del scroll de forma suave
+    if (scrollYRef.current !== undefined) {
+      window.scrollTo({
+        top: scrollYRef.current,
+        behavior: 'instant' // Usamos 'instant' para evitar animaciones
+      });
+    }
+  }, []);
+
+  // ==================== EFECTOS PARA CONTROLAR EL SCROLL ====================
+  
+  useEffect(() => {
+    if (isZoomed || showModalGaleria) {
+      lockScroll();
+    } else {
+      // Usar setTimeout para restaurar el scroll en el siguiente ciclo
+      const timer = setTimeout(() => {
+        unlockScroll();
+      }, 0);
+      
+      return () => clearTimeout(timer);
+    }
+
+    return () => {
+      unlockScroll();
+    };
+  }, [isZoomed, showModalGaleria, lockScroll, unlockScroll]);
+
+  // ==================== ZOOM EN DESKTOP ====================
+  
+  const handleDesktopMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isZoomed || !zoomContainerRef.current) return;
+    
+    const container = zoomContainerRef.current;
+    const rect = container.getBoundingClientRect();
+    
+    const x = Math.max(0, Math.min(100, ((e.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(0, Math.min(100, ((e.clientY - rect.top) / rect.height) * 100));
+    
+    setCursorPosition({ x, y });
+    
+    const moveX = (x / 100) * (rect.width * (zoomLevel - 1));
+    const moveY = (y / 100) * (rect.height * (zoomLevel - 1));
+    
+    setImagePosition({
+      x: -moveX + (rect.width * (zoomLevel - 1)) / 2,
+      y: -moveY + (rect.height * (zoomLevel - 1)) / 2
+    });
+  };
+
+  const toggleDesktopZoom = () => {
+    if (window.innerWidth >= 1024) {
+      const newZoomState = !isZoomed;
+      setIsZoomed(newZoomState);
+      
+      if (newZoomState) {
+        setZoomLevel(2);
+      } else {
+        setImagePosition({ x: 0, y: 0 });
+      }
+    }
+  };
+
+  const handleDesktopWheel = (e: React.WheelEvent) => {
+    if (window.innerWidth >= 1024 && isZoomed) {
+      e.preventDefault();
+      e.stopPropagation();
+      
+      const delta = e.deltaY > 0 ? -0.15 : 0.15;
+      const newZoom = Math.max(1.5, Math.min(4, zoomLevel + delta));
+      setZoomLevel(newZoom);
+    }
+  };
+
+  // ==================== ZOOM EN MÓVIL ====================
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.innerWidth < 1024) {
+      const touch = e.touches[0];
+      setMobileZoom(prev => ({
+        ...prev,
+        lastTouchX: touch.clientX,
+        lastTouchY: touch.clientY,
+        isMoving: false
+      }));
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.innerWidth < 1024) {
+      e.preventDefault();
+      
+      if (e.touches.length === 1 && mobileZoom.isZoomed) {
+        const touch = e.touches[0];
+        const deltaX = touch.clientX - mobileZoom.lastTouchX;
+        const deltaY = touch.clientY - mobileZoom.lastTouchY;
+        
+        setMobileZoom(prev => ({
+          ...prev,
+          translateX: prev.translateX + deltaX,
+          translateY: prev.translateY + deltaY,
+          lastTouchX: touch.clientX,
+          lastTouchY: touch.clientY,
+          isMoving: true
+        }));
+      } else if (e.touches.length === 2) {
+        const touch1 = e.touches[0];
+        const touch2 = e.touches[1];
+        
+        const distance = Math.sqrt(
+          Math.pow(touch2.clientX - touch1.clientX, 2) +
+          Math.pow(touch2.clientY - touch1.clientY, 2)
+        );
+        
+        const baseDistance = 100;
+        const scale = Math.max(1, Math.min(3, distance / baseDistance));
+        
+        const centerX = (touch1.clientX + touch2.clientX) / 2;
+        const centerY = (touch1.clientY + touch2.clientY) / 2;
+        
+        if (mobileImageRef.current) {
+          const rect = mobileImageRef.current.getBoundingClientRect();
+          const relativeX = (centerX - rect.left) / rect.width;
+          const relativeY = (centerY - rect.top) / rect.height;
+          
+          setMobileZoom(prev => ({
+            ...prev,
+            scale,
+            isZoomed: scale > 1.1,
+            translateX: prev.translateX + (relativeX * rect.width * (1 - scale)),
+            translateY: prev.translateY + (relativeY * rect.height * (1 - scale))
+          }));
+        }
+      }
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (window.innerWidth < 1024) {
+      if (!mobileZoom.isMoving && mobileZoom.isZoomed) {
+        setMobileZoom(prev => ({
+          ...prev,
+          scale: 1,
+          isZoomed: false,
+          translateX: 0,
+          translateY: 0
+        }));
+      }
+    }
+  };
+
+  // ==================== FUNCIONES DEL PRODUCTO ====================
+  
   useEffect(() => {
     const fetchCategoriaNombre = async () => {
       const { data, error } = await supabase
@@ -97,18 +295,11 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         .eq("id", producto.categoria_id)
         .single();
 
-      if (error) {
-        console.error("Error obteniendo categoría:", error);
-      } else {
-        console.log("Nombre de categoría:", data.nombre);
+      if (!error) {
         setCategoriaNombre(data.nombre);
       }
     };
 
-    fetchCategoriaNombre();
-  }, [producto.categoria_id]);
-
-  useEffect(() => {
     const fetchMarcaNombre = async () => {
       const { data, error } = await supabase
         .from("marcas")
@@ -116,16 +307,14 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         .eq("id", producto.marca_id)
         .single();
 
-      if (error) {
-        console.error("Error obteniendo marca:", error);
-      } else {
-        console.log("Nombre de marca:", data.nombre);
+      if (!error) {
         setMarcaNombre(data.nombre);
       }
     };
 
+    fetchCategoriaNombre();
     fetchMarcaNombre();
-  }, [producto.marca_id]);
+  }, [producto.categoria_id, producto.marca_id, supabase]);
 
   useEffect(() => {
     verificarFavorito(producto.id);
@@ -134,7 +323,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   useEffect(() => {
     if (
       (categoriaNombre?.toLowerCase() === "indumentaria" ||
-      categoriaNombre?.toLowerCase() === "zapatillas") &&
+       categoriaNombre?.toLowerCase() === "zapatillas") &&
       producto.talle
     ) {
       try {
@@ -154,7 +343,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     }
   }, [categoriaNombre, producto.talle]);
 
-  // Función para generar mensaje de WhatsApp
   const generarMensajeWhatsApp = () => {
     const mensaje = `¡Hola! Estoy interesado/a en el producto:\n\n` +
       `*${producto.nombre}*\n` +
@@ -173,12 +361,9 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     return encodeURIComponent(mensaje);
   };
 
-  // Número de WhatsApp (reemplaza con tu número real)
-  const whatsappNumber = "5493445532916"; // Formato internacional sin + o espacios
-
   const handleWhatsAppClick = () => {
     const mensaje = generarMensajeWhatsApp();
-    const url = `https://wa.me/${whatsappNumber}?text=${mensaje}`;
+    const url = `https://wa.me/5493445532916?text=${mensaje}`;
     window.open(url, '_blank');
   };
 
@@ -194,7 +379,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       await addFavorito(producto.id);
     }
   };
-
 
   const calcularDescuento = (precioOriginal: number, precioOferta: number) =>
     Math.round(((precioOriginal - precioOferta) / precioOriginal) * 100);
@@ -221,6 +405,24 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     return mapa[colorName.toLowerCase()] || "gray";
   }
 
+  const resetAllZoom = () => {
+    setIsZoomed(false);
+    setZoomLevel(2);
+    setCursorPosition({ x: 50, y: 50 });
+    setImagePosition({ x: 0, y: 0 });
+    setMobileZoom({
+      isZoomed: false,
+      scale: 1,
+      translateX: 0,
+      translateY: 0,
+      lastTouchX: 0,
+      lastTouchY: 0,
+      isMoving: false
+    });
+  };
+
+  // ==================== COMPONENTES INTERNOS ====================
+  
   const CardEspecificacion = ({ label, value }: { label: string; value: string }) => (
     <div className="bg-white shadow-md rounded-2xl p-4 flex flex-col items-center text-center">
       <span className="text-sm text-gray-500 mb-1">{label}</span>
@@ -233,7 +435,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
 
     return (
       <div className="bg-white rounded-2xl shadow p-4 border border-gray-200">
-        <p className="text-sm text-gray-500 font-medium mb-2 items-center text-center">{label}</p>
+        <p className="text-sm text-gray-500 font-medium mb-2 text-center">{label}</p>
         <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
           <div
             className="bg-teal-500 h-full rounded-full transition-all duration-300"
@@ -244,110 +446,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       </div>
     );
   };
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isZoomed || !zoomContainerRef.current) return;
-
-    const container = zoomContainerRef.current;
-    const { left, top, width, height } = container.getBoundingClientRect();
-    const x = ((e.clientX - left) / width) * 100;
-    const y = ((e.clientY - top) / height) * 100;
-    
-    setPosition({ x, y });
-  };
-
-  const handleMouseEnter = () => {
-    if (window.innerWidth >= 1024) { // Solo en desktop
-      setIsZoomed(true);
-      setZoomLevel(2);
-    }
-  };
-
-  const handleMouseLeave = () => {
-    setIsZoomed(false);
-    setZoomLevel(1);
-    setPosition({ x: 0, y: 0 });
-  };
-
-  // Funciones para el zoom en móvil
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.innerWidth < 1024) {
-      setIsMobileZoom(true);
-    }
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (!isMobileZoom || e.touches.length !== 2) return;
-    
-    e.preventDefault();
-    
-    const touch1 = e.touches[0];
-    const touch2 = e.touches[1];
-    
-    // Calcular distancia entre dedos
-    const distance = Math.sqrt(
-      Math.pow(touch2.clientX - touch1.clientX, 2) +
-      Math.pow(touch2.clientY - touch1.clientY, 2)
-    );
-    
-    // Escala base
-    const baseDistance = 100; // Distancia de referencia
-    const scale = Math.min(Math.max(distance / baseDistance, 1), 3);
-    
-    setMobileTransform(prev => ({
-      ...prev,
-      scale
-    }));
-  };
-
-  const handleTouchEnd = () => {
-    setTimeout(() => {
-      setIsMobileZoom(false);
-      setMobileTransform({ scale: 1, translateX: 0, translateY: 0 });
-    }, 300);
-  };
-
-  // Función para resetear zoom
-  const resetZoom = () => {
-    setIsZoomed(false);
-    setZoomLevel(1);
-    setPosition({ x: 0, y: 0 });
-    setMobileTransform({ scale: 1, translateX: 0, translateY: 0 });
-    setIsMobileZoom(false);
-  };
-
-  // Agrega estos componentes antes de tu componente principal
-  const PrevArrow = (props: any) => {
-    const { onClick } = props;
-    return (
-      <button
-        onClick={onClick}
-        className="absolute left-4 top-1/2 transform -translate-y-1/2 z-40 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-        aria-label="Imagen anterior"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-        </svg>
-      </button>
-    );
-  };
-
-  const NextArrow = (props: any) => {
-    const { onClick } = props;
-    return (
-      <button
-        onClick={onClick}
-        className="absolute right-4 top-1/2 transform -translate-y-1/2 z-40 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors"
-        aria-label="Siguiente imagen"
-      >
-        <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-        </svg>
-      </button>
-    );
-  };
-
-
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -362,15 +460,109 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                 className="w-28 h-28 rounded-xl border-2 border-gray-200 shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:border-blue-300 transition-all duration-300"
                 onClick={() => {
                   setImagenPrincipal(img.imagen_galeria);
-                  resetZoom(); // Resetear zoom al cambiar imagen
+                  resetAllZoom();
                 }}
               >
-                <img src={img.imagen_galeria} alt={`Img ${i}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
+                <img 
+                  src={img.imagen_galeria} 
+                  alt={`Img ${i}`} 
+                  className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" 
+                />
               </div>
             ))}
           </div>
           
-          {/* Imagen principal - MOBILE (slider) */}
+          {/* Contenedor principal de imagen - Desktop */}
+          <div className="w-full lg:w-1/2 hidden lg:block">
+            <div
+              ref={zoomContainerRef}
+              className="relative overflow-hidden rounded-lg cursor-crosshair bg-white select-none"
+              onMouseMove={handleDesktopMouseMove}
+              onClick={toggleDesktopZoom}
+              onWheel={handleDesktopWheel}
+              style={{ height: '600px' }}
+              onDragStart={(e) => e.preventDefault()}
+              onContextMenu={(e) => e.preventDefault()}
+            >
+              {/* Indicador de zoom */}
+              <div className="absolute top-4 left-4 z-10 flex items-center gap-2">
+                {isZoomed ? (
+                  <div className="bg-black/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    <ZoomIn size={16} />
+                    <span>Zoom {zoomLevel.toFixed(1)}x</span>
+                    <button 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        resetAllZoom();
+                      }}
+                      className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded hover:bg-white/30 transition-colors"
+                    >
+                      Salir
+                    </button>
+                  </div>
+                ) : (
+                  <div className="bg-black/60 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    <ZoomIn size={16} />
+                    <span>Click para zoom</span>
+                  </div>
+                )}
+              </div>
+              
+              {/* Imagen con zoom */}
+              <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                <img
+                  ref={imageRef}
+                  src={imagenPrincipal || producto.imagen}
+                  alt={producto.nombre}
+                  className="max-w-full max-h-full object-contain transition-transform duration-200 ease-out"
+                  style={{
+                    transform: isZoomed 
+                      ? `translate(${imagePosition.x}px, ${imagePosition.y}px) scale(${zoomLevel})`
+                      : 'scale(1)',
+                    transformOrigin: 'center center',
+                    pointerEvents: 'none'
+                  }}
+                  draggable="false"
+                />
+              </div>
+              
+              {/* Lente de zoom */}
+              {isZoomed && (
+                <div className="absolute inset-0 pointer-events-none">
+                  <div 
+                    className="absolute w-24 h-24 border-2 border-white/70 rounded-full shadow-2xl"
+                    style={{
+                      left: `calc(${cursorPosition.x}% - 3rem)`,
+                      top: `calc(${cursorPosition.y}% - 3rem)`,
+                      boxShadow: '0 0 20px rgba(255,255,255,0.5), inset 0 0 20px rgba(255,255,255,0.3)'
+                    }}
+                  />
+                </div>
+              )}
+              
+              {/* Botón para abrir modal */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowModalGaleria(true);
+                }}
+                className="absolute bottom-4 right-4 bg-black/80 hover:bg-black text-white p-2 rounded-full transition-colors z-10 shadow-lg"
+                title="Ver en pantalla completa"
+              >
+                <ZoomIn size={24} />
+              </button>
+            </div>
+            
+            {/* Instrucciones */}
+            <div className="mt-3 text-sm text-gray-600 flex flex-wrap items-center gap-2">
+              <div className="flex items-center gap-1">
+                <ZoomIn size={16} />
+                <span>{isZoomed ? 'Rueda para ajustar zoom • Click para salir' : 'Click para activar zoom'}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Imagen principal - MOBILE */}
           <div className="w-full lg:hidden">
             <Slider 
               dots={true} 
@@ -379,115 +571,82 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               slidesToShow={1} 
               slidesToScroll={1} 
               arrows={false}
-              beforeChange={resetZoom} // Resetear zoom al cambiar slide
+              beforeChange={resetAllZoom}
             >
               {[producto.imagen, ...producto.galeria.map(g => g.imagen_galeria)].map((img, idx) => (
                 <div key={idx} className="relative">
                   <div
-                    className="touch-none overflow-hidden rounded-xl"
+                    className="touch-none overflow-hidden rounded-xl bg-white relative select-none"
+                    style={{ height: '500px' }}
                     onTouchStart={handleTouchStart}
                     onTouchMove={handleTouchMove}
                     onTouchEnd={handleTouchEnd}
-                    onClick={() => !isMobileZoom && setShowModalGaleria(true)}
                   >
-                    <img
-                      src={img}
-                      alt={`Imagen ${idx + 1}`}
-                      className="w-full h-[500px] object-contain touch-manipulation"
-                      style={{
-                        transform: `scale(${mobileTransform.scale}) translate(${mobileTransform.translateX}px, ${mobileTransform.translateY}px)`,
-                        transition: isMobileZoom ? 'none' : 'transform 0.3s ease',
-                      }}
-                    />
-                    
-                    {/* Indicador de zoom en móvil */}
-                    {mobileTransform.scale > 1 && (
-                      <div className="absolute top-4 left-4 z-10 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
+                    {/* Indicador de zoom móvil */}
+                    {mobileZoom.isZoomed && (
+                      <div className="absolute top-4 left-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
                         <Move size={16} />
-                        <span>{Math.round(mobileTransform.scale * 100)}%</span>
+                        <span>{mobileZoom.scale.toFixed(1)}x</span>
                         <button 
-                          onClick={resetZoom}
-                          className="ml-2 text-xs bg-white/20 px-2 py-1 rounded"
+                          onClick={resetAllZoom}
+                          className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded hover:bg-white/30 transition-colors"
                         >
-                          Reset
+                          Salir
                         </button>
+                      </div>
+                    )}
+                    
+                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                      <img
+                        ref={mobileImageRef}
+                        src={img}
+                        alt={`Imagen ${idx + 1}`}
+                        className="max-w-full max-h-full object-contain touch-manipulation"
+                        style={{
+                          transform: `translate(${mobileZoom.translateX}px, ${mobileZoom.translateY}px) scale(${mobileZoom.scale})`,
+                          transition: mobileZoom.isMoving ? 'none' : 'transform 0.2s ease-out',
+                          pointerEvents: 'none'
+                        }}
+                        draggable="false"
+                      />
+                    </div>
+                    
+                    {/* Overlay de instrucciones */}
+                    {!mobileZoom.isZoomed && (
+                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 pointer-events-none">
+                        <div className="bg-black/60 text-white px-4 py-2 rounded-full text-sm mb-2">
+                          Pellizca para hacer zoom
+                        </div>
                       </div>
                     )}
                   </div>
                   
-                  {/* Instrucciones para móvil */}
-                  <div className="mt-2 text-sm text-gray-600 flex items-center justify-center gap-2">
-                    <ZoomIn size={16} />
-                    <span>Pellizca para hacer zoom • Toca para pantalla completa</span>
+                  <button
+                    onClick={() => setShowModalGaleria(true)}
+                    className="absolute bottom-4 right-4 bg-black/80 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
+                  >
+                    <ZoomIn size={20} />
+                  </button>
+                  
+                  <div className="mt-3 text-sm text-gray-600 px-2">
+                    {mobileZoom.isZoomed ? (
+                      <div className="flex items-center justify-center gap-2">
+                        <Move size={16} />
+                        <span>Desliza para moverte • Toca para salir</span>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center gap-2">
+                        <ZoomIn size={16} />
+                        <span>Pellizca para zoom • Toca para pantalla completa</span>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
             </Slider>
           </div>
 
-          {/* Imagen principal - DESKTOP */}
-          <div className="w-full lg:w-1/2 hidden lg:block">
-            <div
-              ref={zoomContainerRef}
-              className="relative overflow-hidden rounded-lg cursor-crosshair"
-              onMouseMove={handleMouseMove}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onClick={() => setShowModalGaleria(true)}
-            >
-              {/* Indicador de zoom (solo visible cuando está activo) */}
-              {isZoomed && (
-                <div className="absolute top-4 left-4 z-10 bg-black/70 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                  <ZoomIn size={16} />
-                  <span>Zoom activo</span>
-                </div>
-              )}
-              
-              {/* Imagen con zoom */}
-              <img
-                ref={imageRef}
-                src={imagenPrincipal || producto.imagen}
-                alt={producto.nombre}
-                className={`w-full h-auto object-contain transition-all duration-300 ${
-                  isZoomed ? 'scale-150' : 'scale-100'
-                }`}
-                style={{
-                  transformOrigin: `${position.x}% ${position.y}%`,
-                  transform: isZoomed ? `scale(${zoomLevel})` : 'scale(1)',
-                }}
-              />
-              
-              {/* Lente de zoom (opcional) */}
-              {isZoomed && (
-                <div className="absolute inset-0 pointer-events-none">
-                  <div 
-                    className="absolute w-64 h-64 border-2 border-white/50 rounded-full shadow-lg"
-                    style={{
-                      left: `calc(${position.x}% - 8rem)`,
-                      top: `calc(${position.y}% - 8rem)`,
-                    }}
-                  />
-                </div>
-              )}
-              
-              {/* Botón para abrir modal */}
-              <button
-                onClick={() => setShowModalGaleria(true)}
-                className="absolute bottom-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full transition-colors z-10"
-                title="Ver en pantalla completa"
-              >
-                <ZoomIn size={24} />
-              </button>
-            </div>
-            
-            {/* Instrucciones de uso */}
-            <div className="mt-2 text-sm text-gray-600 flex items-center gap-2">
-              <ZoomIn size={16} />
-              <span>Pasa el cursor sobre la imagen para hacer zoom</span>
-            </div>
-          </div>
-
-          {/* Detalles */}
+          {/* Detalles del producto */}
           <div className="w-full lg:w-1/3 mt-8 lg:mt-0">
             <div className="flex items-start justify-between">
               <h1 className="text-2xl text-gray-900">{producto.nombre}</h1>
@@ -588,7 +747,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-            {/* Selección de talle (solo para indumentaria y zapatillas) */}
+            {/* Selección de talle */}
             {(categoriaNombre?.toLowerCase() === "indumentaria" || 
               categoriaNombre?.toLowerCase() === "zapatillas") && (
               <div className="mt-6">
@@ -613,58 +772,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
               </div>
             )}
 
-            {/* Sección comentada: Cantidad y carrito */}
-            {/*
-            <div className="mt-8">
-              <h3 className="text-md font-medium text-gray-800 mb-2">Cantidad</h3>
-              <div className="flex items-center space-x-4 mb-4">
-                <button 
-                  onClick={() => setCantidad(Math.max(1, cantidad - 1))} 
-                  className="w-10 h-10 text-xl bg-gray-200 rounded-full"
-                  disabled={cantidad <= 1}
-                >
-                  -
-                </button>
-                <span className="text-lg font-semibold">{cantidad}</span>
-                <button
-                  onClick={handleIncrementarCantidad}
-                  className="w-10 h-10 text-xl bg-gray-200 rounded-full"
-                  disabled={
-                    categoriaNombre?.toLowerCase() === "indumentaria y calzado" 
-                      ? !talleSeleccionado || cantidad >= tallesDisponibles[talleSeleccionado]
-                      : cantidad >= producto.stock
-                  }
-                >
-                  +
-                </button>
-              </div>
-
-              <button
-                onClick={handleAñadirAlCarrito}
-                disabled={
-                  producto.stock === 0 || 
-                  (categoriaNombre?.toLowerCase() === "indumentaria y calzado" && !talleSeleccionado) ||
-                  (categoriaNombre?.toLowerCase() === "indumentaria y calzado" && tallesDisponibles[talleSeleccionado!] === 0)
-                }
-                className={`w-full py-3 rounded-lg text-base transition 
-                  ${producto.stock === 0 || 
-                    (categoriaNombre?.toLowerCase() === "indumentaria y calzado" && 
-                     (!talleSeleccionado || tallesDisponibles[talleSeleccionado] === 0))
-                    ? "bg-gray-300 text-gray-600 cursor-not-allowed" 
-                    : "bg-black text-white hover:bg-gray-800"}`}
-              >
-                {producto.stock === 0 
-                  ? "Sin stock" 
-                  : categoriaNombre?.toLowerCase() === "indumentaria y calzado" && !talleSeleccionado
-                    ? "Selecciona un talle"
-                    : categoriaNombre?.toLowerCase() === "indumentaria y calzado" && tallesDisponibles[talleSeleccionado!] === 0
-                      ? "Sin stock en este talle"
-                      : "Añadir al carrito"}
-              </button>
-            </div>
-            */}
-
-            {/* Botón de WhatsApp para consultar disponibilidad */}
+            {/* WhatsApp */}
             <div className="mt-8">
               <div className="mb-4 p-4 bg-gradient-to-r from-blue-50 to-green-50 border border-blue-100 rounded-xl">
                 <div className="flex items-center mb-2">
@@ -718,127 +826,20 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         <Carrito isOpen={isCarritoOpen} onClose={() => setIsCarritoOpen(false)} carritoModificado={carritoModificado} />
       </div>
 
-      {/* Modal galería mejorado */}
+      {/* Modal galería */}
       {showModalGaleria && (
-        <div className="fixed inset-0 z-50 bg-black bg-opacity-95 flex items-center justify-center p-4">
-          <div className="relative w-full max-w-5xl">
-            {/* Botón cerrar */}
-            <button
-              onClick={() => {
-                setShowModalGaleria(false);
-                resetZoom();
-              }}
-              className="absolute -top-12 right-0 text-3xl text-white hover:text-gray-300 z-50"
-              aria-label="Cerrar modal"
-            >
-              ×
-            </button>
-            
-            {/* Contenedor de imagen */}
-            <div className="relative bg-black/30 rounded-xl p-4">
-              {/* Imagen principal */}
-              <div className="flex justify-center items-center">
-                <img
-                  src={imagenPrincipal || producto.imagen}
-                  alt={producto.nombre}
-                  className="max-w-full max-h-[70vh] object-contain cursor-zoom-in transition-transform duration-300"
-                  style={{ transform: 'scale(1)' }}
-                  onClick={(e) => {
-                    const img = e.currentTarget;
-                    if (img.style.transform === 'scale(1.5)') {
-                      img.style.transform = 'scale(1)';
-                      img.style.cursor = 'zoom-in';
-                    } else {
-                      img.style.transform = 'scale(1.5)';
-                      img.style.cursor = 'zoom-out';
-                    }
-                  }}
-                />
-              </div>
-              
-              {/* Controles */}
-              <div className="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4">
-                {/* Botones */}
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => {
-                      const img = document.querySelector('.modal-image') as HTMLImageElement;
-                      if (img) {
-                        if (img.style.transform === 'scale(1.5)') {
-                          img.style.transform = 'scale(1)';
-                          img.style.cursor = 'zoom-in';
-                        } else {
-                          img.style.transform = 'scale(1.5)';
-                          img.style.cursor = 'zoom-out';
-                        }
-                      }
-                    }}
-                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm"
-                  >
-                    <ZoomIn size={18} />
-                    <span>Alternar Zoom</span>
-                  </button>
-                  <button
-                    onClick={() => {
-                      const img = document.querySelector('.modal-image') as HTMLImageElement;
-                      if (img) {
-                        img.style.transform = 'scale(1)';
-                        img.style.cursor = 'zoom-in';
-                      }
-                    }}
-                    className="bg-white/20 hover:bg-white/30 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm"
-                  >
-                    <ZoomOut size={18} />
-                    <span>Reiniciar</span>
-                  </button>
-                </div>
-                
-                {/* Instrucción */}
-                <div className="text-white/80 text-sm">
-                  Haz click en la imagen para zoom (1.5x)
-                </div>
-              </div>
-              
-              {/* Miniaturas (si hay galería) */}
-              {producto.galeria.length > 0 && (
-                <div className="mt-6 flex justify-center gap-2 overflow-x-auto py-2">
-                  {/* Miniatura de imagen principal */}
-                  <button
-                    onClick={() => setImagenPrincipal(producto.imagen)}
-                    className={`w-16 h-16 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
-                      imagenPrincipal === producto.imagen ? 'border-white' : 'border-transparent hover:border-white/50'
-                    }`}
-                  >
-                    <img 
-                      src={producto.imagen} 
-                      alt="Principal" 
-                      className="w-full h-full object-cover"
-                    />
-                  </button>
-                  
-                  {/* Miniaturas de galería */}
-                  {producto.galeria.map((img, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setImagenPrincipal(img.imagen_galeria)}
-                      className={`w-16 h-16 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
-                        imagenPrincipal === img.imagen_galeria ? 'border-white' : 'border-transparent hover:border-white/50'
-                      }`}
-                    >
-                      <img 
-                        src={img.imagen_galeria} 
-                        alt={`Galería ${idx + 1}`} 
-                        className="w-full h-full object-cover"
-                      />
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
+        <ModalGaleria
+          producto={producto}
+          imagenPrincipal={imagenPrincipal}
+          setImagenPrincipal={setImagenPrincipal}
+          onClose={() => {
+            setShowModalGaleria(false);
+            resetAllZoom();
+          }}
+        />
       )}
 
+      {/* Especificaciones */}
       {categoriaNombre && (
         <div className="mt-8">
           <div className="flex items-center justify-center mb-6">
@@ -905,6 +906,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         </div>
       )}
 
+      {/* Productos relacionados */}
       {relacionados.length > 0 && (
         <div className="mt-8 pb-4">
           <div className="flex items-center justify-center mb-6">
@@ -943,7 +945,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                 : 0;
 
               const precioEfectivo = producto.precio * 0.85;
-              const cuotas = producto.precio / 3;
 
               return (
                 <div key={producto.id} className="px-3">
@@ -971,7 +972,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                       </h3>
                     </Link>
 
-                    {/* Separador decorativo */}
                     <div className="w-12 h-[2px] bg-[#816b4b] mx-auto my-2 rounded-full" />
 
                     {mostrarOferta ? (
@@ -1012,3 +1012,168 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     </div>
   );
 }
+
+// Componente Modal simplificado
+interface ModalGaleriaProps {
+  producto: Producto;
+  imagenPrincipal: string | null;
+  setImagenPrincipal: (img: string) => void;
+  onClose: () => void;
+}
+
+const ModalGaleria = ({ producto, imagenPrincipal, setImagenPrincipal, onClose }: ModalGaleriaProps) => {
+  const [modalZoom, setModalZoom] = useState({ scale: 1, x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [startY, setStartY] = useState(0);
+
+  const handleModalWheel = (e: React.WheelEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    const delta = e.deltaY > 0 ? -0.2 : 0.2;
+    const newScale = Math.max(1, Math.min(3, modalZoom.scale + delta));
+    
+    setModalZoom(prev => ({
+      ...prev,
+      scale: newScale
+    }));
+  };
+
+  const handleModalMouseDown = (e: React.MouseEvent) => {
+    if (modalZoom.scale > 1) {
+      setIsDragging(true);
+      setStartX(e.clientX - modalZoom.x);
+      setStartY(e.clientY - modalZoom.y);
+      e.preventDefault();
+    }
+  };
+
+  const handleModalMouseMove = (e: React.MouseEvent) => {
+    if (isDragging && modalZoom.scale > 1) {
+      setModalZoom(prev => ({
+        ...prev,
+        x: e.clientX - startX,
+        y: e.clientY - startY
+      }));
+      e.preventDefault();
+    }
+  };
+
+  const handleModalMouseUp = () => {
+    setIsDragging(false);
+  };
+
+  const resetModalZoom = () => {
+    setModalZoom({ scale: 1, x: 0, y: 0 });
+  };
+
+  return (
+    <div 
+      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 select-none"
+      onClick={onClose}
+    >
+      <div 
+        className="relative max-w-6xl w-full max-h-[90vh]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        {/* Cabecera */}
+        <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent">
+          <div className="text-white text-sm flex items-center gap-2">
+            {modalZoom.scale > 1 ? (
+              <>
+                <Move size={16} />
+                <span>Arrastra para mover • Rueda para zoom</span>
+              </>
+            ) : (
+              <>
+                <ZoomIn size={16} />
+                <span>Rueda para zoom • Click fuera para cerrar</span>
+              </>
+            )}
+          </div>
+          <button
+            onClick={onClose}
+            className="text-3xl text-white hover:text-gray-300 bg-black/50 rounded-full w-10 h-10 flex items-center justify-center transition-colors"
+          >
+            ×
+          </button>
+        </div>
+        
+        {/* Imagen */}
+        <div className="h-full flex items-center justify-center p-8">
+          <div 
+            className="relative overflow-hidden rounded-lg cursor-grab active:cursor-grabbing"
+            onWheel={handleModalWheel}
+            onMouseDown={handleModalMouseDown}
+            onMouseMove={handleModalMouseMove}
+            onMouseUp={handleModalMouseUp}
+            onMouseLeave={handleModalMouseUp}
+            style={{ 
+              width: '100%', 
+              height: '100%',
+              maxWidth: '800px',
+              maxHeight: '600px'
+            }}
+          >
+            <img
+              src={imagenPrincipal || producto.imagen}
+              alt={producto.nombre}
+              className="w-full h-full object-contain pointer-events-none"
+              style={{
+                transform: `translate(${modalZoom.x}px, ${modalZoom.y}px) scale(${modalZoom.scale})`,
+                transition: isDragging ? 'none' : 'transform 0.2s ease'
+              }}
+              draggable="false"
+            />
+            
+            {/* Controles de zoom */}
+            {modalZoom.scale > 1 && (
+              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                <button
+                  onClick={resetModalZoom}
+                  className="bg-black/70 hover:bg-black/90 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm"
+                >
+                  <ZoomOut size={16} />
+                  <span>Reiniciar ({modalZoom.scale.toFixed(1)}x)</span>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+        
+        {/* Miniaturas */}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 overflow-x-auto py-2">
+          <button
+            onClick={() => setImagenPrincipal(producto.imagen)}
+            className={`w-12 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
+              imagenPrincipal === producto.imagen ? 'border-white' : 'border-transparent hover:border-white/50'
+            }`}
+          >
+            <img 
+              src={producto.imagen} 
+              alt="Principal" 
+              className="w-full h-full object-cover"
+            />
+          </button>
+          
+          {producto.galeria.map((img, idx) => (
+            <button
+              key={idx}
+              onClick={() => setImagenPrincipal(img.imagen_galeria)}
+              className={`w-12 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
+                imagenPrincipal === img.imagen_galeria ? 'border-white' : 'border-transparent hover:border-white/50'
+              }`}
+            >
+              <img 
+                src={img.imagen_galeria} 
+                alt={`Galería ${idx + 1}`} 
+                className="w-full h-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
