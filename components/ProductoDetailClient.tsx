@@ -4,7 +4,7 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { createClient } from '@/utils/supabase/client';
 import { useFavoritos } from "@/context/FavoritosContext";
-import { Heart, CheckCircle, AlertTriangle, XCircle, MessageCircle, ZoomIn, ZoomOut, Move } from "lucide-react";
+import { Heart, CheckCircle, AlertTriangle, XCircle, MessageCircle, ZoomIn, ZoomOut, Move, X, ChevronLeft, ChevronRight } from "lucide-react";
 import HeartBurst from "@/components/HeartBurst";
 import { motion } from "framer-motion";
 import Carrito from "@/components/Carrito";
@@ -80,34 +80,21 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   const [cursorPosition, setCursorPosition] = useState({ x: 50, y: 50 });
   const [imagePosition, setImagePosition] = useState({ x: 0, y: 0 });
   
-  // Estados para el zoom en móvil
-  const [mobileZoom, setMobileZoom] = useState({
-    isZoomed: false,
-    scale: 1,
-    translateX: 0,
-    translateY: 0,
-    lastTouchX: 0,
-    lastTouchY: 0,
-    isMoving: false
-  });
-  
   const imageRef = useRef<HTMLImageElement>(null);
   const zoomContainerRef = useRef<HTMLDivElement>(null);
-  const mobileImageRef = useRef<HTMLImageElement>(null);
-  const scrollYRef = useRef<number>(0); // Para guardar la posición del scroll
+  const scrollYRef = useRef<number>(0);
   const router = useRouter();
   const supabase = createClient();
   const [showBurst, setShowBurst] = useState(false);
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
 
   const { esFavorito, verificarFavorito, addFavorito, removeFavorito } = useFavoritos();
 
-  // ==================== FUNCIONES PARA BLOQUEAR/DESBLOQUEAR SCROLL MEJORADAS ====================
+  // ==================== FUNCIONES PARA BLOQUEAR/DESBLOQUEAR SCROLL ====================
   
   const lockScroll = useCallback(() => {
-    // Guardar la posición actual del scroll
     scrollYRef.current = window.scrollY;
     
-    // Aplicar estilos para bloquear el scroll de forma suave
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollYRef.current}px`;
     document.body.style.left = '0';
@@ -116,7 +103,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     document.body.style.width = '100%';
     document.body.style.height = '100%';
     
-    // Compensar la barra de scroll si es visible
     const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     if (scrollbarWidth > 0) {
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -124,7 +110,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   }, []);
 
   const unlockScroll = useCallback(() => {
-    // Restaurar los estilos del body
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
@@ -134,11 +119,10 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     document.body.style.height = '';
     document.body.style.paddingRight = '';
     
-    // Restaurar la posición del scroll de forma suave
     if (scrollYRef.current !== undefined) {
       window.scrollTo({
         top: scrollYRef.current,
-        behavior: 'instant' // Usamos 'instant' para evitar animaciones
+        behavior: 'instant'
       });
     }
   }, []);
@@ -149,7 +133,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     if (isZoomed || showModalGaleria) {
       lockScroll();
     } else {
-      // Usar setTimeout para restaurar el scroll en el siguiente ciclo
       const timer = setTimeout(() => {
         unlockScroll();
       }, 0);
@@ -208,80 +191,27 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     }
   };
 
-  // ==================== ZOOM EN MÓVIL ====================
+  // ==================== FUNCIÓN RESET ALL ZOOM ====================
   
-  const handleTouchStart = (e: React.TouchEvent) => {
-    if (window.innerWidth < 1024) {
-      const touch = e.touches[0];
-      setMobileZoom(prev => ({
-        ...prev,
-        lastTouchX: touch.clientX,
-        lastTouchY: touch.clientY,
-        isMoving: false
-      }));
-    }
-  };
+  const resetAllZoom = useCallback(() => {
+    setIsZoomed(false);
+    setZoomLevel(2);
+    setCursorPosition({ x: 50, y: 50 });
+    setImagePosition({ x: 0, y: 0 });
+  }, []);
 
-  const handleTouchMove = (e: React.TouchEvent) => {
-    if (window.innerWidth < 1024) {
-      e.preventDefault();
-      
-      if (e.touches.length === 1 && mobileZoom.isZoomed) {
-        const touch = e.touches[0];
-        const deltaX = touch.clientX - mobileZoom.lastTouchX;
-        const deltaY = touch.clientY - mobileZoom.lastTouchY;
-        
-        setMobileZoom(prev => ({
-          ...prev,
-          translateX: prev.translateX + deltaX,
-          translateY: prev.translateY + deltaY,
-          lastTouchX: touch.clientX,
-          lastTouchY: touch.clientY,
-          isMoving: true
-        }));
-      } else if (e.touches.length === 2) {
-        const touch1 = e.touches[0];
-        const touch2 = e.touches[1];
-        
-        const distance = Math.sqrt(
-          Math.pow(touch2.clientX - touch1.clientX, 2) +
-          Math.pow(touch2.clientY - touch1.clientY, 2)
-        );
-        
-        const baseDistance = 100;
-        const scale = Math.max(1, Math.min(3, distance / baseDistance));
-        
-        const centerX = (touch1.clientX + touch2.clientX) / 2;
-        const centerY = (touch1.clientY + touch2.clientY) / 2;
-        
-        if (mobileImageRef.current) {
-          const rect = mobileImageRef.current.getBoundingClientRect();
-          const relativeX = (centerX - rect.left) / rect.width;
-          const relativeY = (centerY - rect.top) / rect.height;
-          
-          setMobileZoom(prev => ({
-            ...prev,
-            scale,
-            isZoomed: scale > 1.1,
-            translateX: prev.translateX + (relativeX * rect.width * (1 - scale)),
-            translateY: prev.translateY + (relativeY * rect.height * (1 - scale))
-          }));
-        }
-      }
-    }
-  };
-
-  const handleTouchEnd = () => {
-    if (window.innerWidth < 1024) {
-      if (!mobileZoom.isMoving && mobileZoom.isZoomed) {
-        setMobileZoom(prev => ({
-          ...prev,
-          scale: 1,
-          isZoomed: false,
-          translateX: 0,
-          translateY: 0
-        }));
-      }
+  // ==================== CONFIGURACIÓN DEL SLIDER PARA MÓVIL ====================
+  
+  const sliderSettings = {
+    dots: true,
+    infinite: true,
+    speed: 500,
+    slidesToShow: 1,
+    slidesToScroll: 1,
+    arrows: false,
+    beforeChange: (oldIndex: number, newIndex: number) => {
+      setCurrentSlideIndex(newIndex);
+      resetAllZoom();
     }
   };
 
@@ -405,24 +335,6 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     return mapa[colorName.toLowerCase()] || "gray";
   }
 
-  const resetAllZoom = () => {
-    setIsZoomed(false);
-    setZoomLevel(2);
-    setCursorPosition({ x: 50, y: 50 });
-    setImagePosition({ x: 0, y: 0 });
-    setMobileZoom({
-      isZoomed: false,
-      scale: 1,
-      translateX: 0,
-      translateY: 0,
-      lastTouchX: 0,
-      lastTouchY: 0,
-      isMoving: false
-    });
-  };
-
-  // ==================== COMPONENTES INTERNOS ====================
-  
   const CardEspecificacion = ({ label, value }: { label: string; value: string }) => (
     <div className="bg-white shadow-md rounded-2xl p-4 flex flex-col items-center text-center">
       <span className="text-sm text-gray-500 mb-1">{label}</span>
@@ -562,88 +474,42 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
             </div>
           </div>
 
-          {/* Imagen principal - MOBILE */}
+          {/* Imagen principal - MOBILE (SIN ZOOM, SOLO SLIDER) */}
           <div className="w-full lg:hidden">
-            <Slider 
-              dots={true} 
-              infinite={true} 
-              speed={500} 
-              slidesToShow={1} 
-              slidesToScroll={1} 
-              arrows={false}
-              beforeChange={resetAllZoom}
-            >
+            <Slider {...sliderSettings}>
               {[producto.imagen, ...producto.galeria.map(g => g.imagen_galeria)].map((img, idx) => (
                 <div key={idx} className="relative">
                   <div
-                    className="touch-none overflow-hidden rounded-xl bg-white relative select-none"
+                    className="overflow-hidden rounded-xl bg-gray-100 relative"
                     style={{ height: '500px' }}
-                    onTouchStart={handleTouchStart}
-                    onTouchMove={handleTouchMove}
-                    onTouchEnd={handleTouchEnd}
                   >
-                    {/* Indicador de zoom móvil */}
-                    {mobileZoom.isZoomed && (
-                      <div className="absolute top-4 left-4 z-10 bg-black/80 text-white px-3 py-1 rounded-full text-sm flex items-center gap-2">
-                        <Move size={16} />
-                        <span>{mobileZoom.scale.toFixed(1)}x</span>
-                        <button 
-                          onClick={resetAllZoom}
-                          className="ml-2 text-xs bg-white/20 px-2 py-0.5 rounded hover:bg-white/30 transition-colors"
-                        >
-                          Salir
-                        </button>
-                      </div>
-                    )}
-                    
-                    <div className="w-full h-full flex items-center justify-center overflow-hidden">
+                    <div className="w-full h-full flex items-center justify-center">
                       <img
-                        ref={mobileImageRef}
                         src={img}
                         alt={`Imagen ${idx + 1}`}
-                        className="max-w-full max-h-full object-contain touch-manipulation"
-                        style={{
-                          transform: `translate(${mobileZoom.translateX}px, ${mobileZoom.translateY}px) scale(${mobileZoom.scale})`,
-                          transition: mobileZoom.isMoving ? 'none' : 'transform 0.2s ease-out',
-                          pointerEvents: 'none'
-                        }}
-                        draggable="false"
+                        className="max-w-full max-h-full object-contain"
                       />
                     </div>
-                    
-                    {/* Overlay de instrucciones */}
-                    {!mobileZoom.isZoomed && (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center bg-black/20 pointer-events-none">
-                        <div className="bg-black/60 text-white px-4 py-2 rounded-full text-sm mb-2">
-                          Pellizca para hacer zoom
-                        </div>
-                      </div>
-                    )}
                   </div>
                   
+                  {/* Botón para abrir modal */}
                   <button
                     onClick={() => setShowModalGaleria(true)}
-                    className="absolute bottom-4 right-4 bg-black/80 text-white p-2 rounded-full shadow-lg hover:bg-black transition-colors"
+                    className="absolute bottom-4 right-4 bg-black/80 text-white p-3 rounded-full shadow-lg hover:bg-black transition-colors"
                   >
-                    <ZoomIn size={20} />
+                    <ZoomIn size={22} />
                   </button>
-                  
-                  <div className="mt-3 text-sm text-gray-600 px-2">
-                    {mobileZoom.isZoomed ? (
-                      <div className="flex items-center justify-center gap-2">
-                        <Move size={16} />
-                        <span>Desliza para moverte • Toca para salir</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center justify-center gap-2">
-                        <ZoomIn size={16} />
-                        <span>Pellizca para zoom • Toca para pantalla completa</span>
-                      </div>
-                    )}
-                  </div>
                 </div>
               ))}
             </Slider>
+            
+            {/* Instrucciones para móvil */}
+            <div className="mt-3 text-sm text-gray-600 px-2 text-center">
+              <div className="flex items-center justify-center gap-2">
+                <ZoomIn size={16} />
+                <span>Toca el ícono para ver en pantalla completa</span>
+              </div>
+            </div>
           </div>
 
           {/* Detalles del producto */}
@@ -826,16 +692,18 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
         <Carrito isOpen={isCarritoOpen} onClose={() => setIsCarritoOpen(false)} carritoModificado={carritoModificado} />
       </div>
 
-      {/* Modal galería */}
+      {/* Modal galería MEJORADO - VERSIÓN SIMPLIFICADA */}
       {showModalGaleria && (
-        <ModalGaleria
+        <ModalGaleriaMejorado
           producto={producto}
-          imagenPrincipal={imagenPrincipal}
-          setImagenPrincipal={setImagenPrincipal}
+          currentSlideIndex={currentSlideIndex}
+          setCurrentSlideIndex={setCurrentSlideIndex}
           onClose={() => {
             setShowModalGaleria(false);
             resetAllZoom();
           }}
+          lockScroll={lockScroll}
+          unlockScroll={unlockScroll}
         />
       )}
 
@@ -1013,82 +881,364 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
   );
 }
 
-// Componente Modal simplificado
-interface ModalGaleriaProps {
+// ==================== MODAL GALERÍA MEJORADO ====================
+interface ModalGaleriaMejoradoProps {
   producto: Producto;
-  imagenPrincipal: string | null;
-  setImagenPrincipal: (img: string) => void;
+  currentSlideIndex: number;
+  setCurrentSlideIndex: (index: number) => void;
   onClose: () => void;
+  lockScroll: () => void;
+  unlockScroll: () => void;
 }
 
-const ModalGaleria = ({ producto, imagenPrincipal, setImagenPrincipal, onClose }: ModalGaleriaProps) => {
-  const [modalZoom, setModalZoom] = useState({ scale: 1, x: 0, y: 0 });
+const ModalGaleriaMejorado = ({ 
+  producto, 
+  currentSlideIndex,
+  setCurrentSlideIndex,
+  onClose, 
+  lockScroll, 
+  unlockScroll 
+}: ModalGaleriaMejoradoProps) => {
+  const [zoomScale, setZoomScale] = useState(1);
+  const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startY, setStartY] = useState(0);
+  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [isMobile, setIsMobile] = useState(false);
+  const [lastTouchDistance, setLastTouchDistance] = useState(0);
+  const [lastScale, setLastScale] = useState(1);
+  const [clickCount, setClickCount] = useState(0);
+  const [clickTimer, setClickTimer] = useState<NodeJS.Timeout | null>(null);
+  const modalRef = useRef<HTMLDivElement>(null);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef({ x: 0, y: 0, time: 0 });
+  const isZoomingRef = useRef(false);
+  const lastClickTimeRef = useRef(0);
 
-  const handleModalWheel = (e: React.WheelEvent) => {
+  // Detectar si es móvil y bloquear scroll
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    lockScroll();
+    
+    return () => {
+      window.removeEventListener('resize', checkMobile);
+      unlockScroll();
+    };
+  }, [lockScroll, unlockScroll]);
+
+  // Obtener todas las imágenes
+  const allImages = [producto.imagen, ...producto.galeria.map(g => g.imagen_galeria)];
+  const currentImage = allImages[currentSlideIndex];
+
+  // Navegación
+  const goToPrevious = () => {
+    if (zoomScale > 1) {
+      resetZoom();
+      setTimeout(() => {
+        const newIndex = (currentSlideIndex - 1 + allImages.length) % allImages.length;
+        setCurrentSlideIndex(newIndex);
+      }, 150);
+    } else {
+      const newIndex = (currentSlideIndex - 1 + allImages.length) % allImages.length;
+      setCurrentSlideIndex(newIndex);
+      resetZoom();
+    }
+  };
+
+  const goToNext = () => {
+    if (zoomScale > 1) {
+      resetZoom();
+      setTimeout(() => {
+        const newIndex = (currentSlideIndex + 1) % allImages.length;
+        setCurrentSlideIndex(newIndex);
+      }, 150);
+    } else {
+      const newIndex = (currentSlideIndex + 1) % allImages.length;
+      setCurrentSlideIndex(newIndex);
+      resetZoom();
+    }
+  };
+
+  // Reset zoom
+  const resetZoom = () => {
+    setZoomScale(1);
+    setTranslate({ x: 0, y: 0 });
+    isZoomingRef.current = false;
+  };
+
+  // Manejar doble click para desktop
+  const handleDoubleClick = (e: React.MouseEvent) => {
+    if (isMobile) return;
+    
+    const now = Date.now();
+    const timeSinceLastClick = now - lastClickTimeRef.current;
+    
+    if (timeSinceLastClick < 300) { // Doble click detectado
+      e.preventDefault();
+      e.stopPropagation();
+      
+      if (zoomScale === 1) {
+        // Activar zoom centrado en el punto del click
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        
+        const newScale = 2;
+        setZoomScale(newScale);
+        
+        // Calcular posición para centrar el zoom en el punto del click
+        if (imageRef.current && containerRef.current) {
+          const imgRect = imageRef.current.getBoundingClientRect();
+          const containerRect = containerRef.current.getBoundingClientRect();
+          
+          const relativeX = x / rect.width;
+          const relativeY = y / rect.height;
+          
+          const scaleDiff = newScale - 1;
+          const newTranslateX = -((relativeX - 0.5) * containerRect.width * scaleDiff);
+          const newTranslateY = -((relativeY - 0.5) * containerRect.height * scaleDiff);
+          
+          setTranslate({ x: newTranslateX, y: newTranslateY });
+        }
+      } else {
+        // Desactivar zoom
+        resetZoom();
+      }
+      
+      lastClickTimeRef.current = 0;
+    } else {
+      lastClickTimeRef.current = now;
+    }
+  };
+
+  // ==================== MANEJO DE GESTOS TÁCTILES PARA MÓVIL ====================
+  
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    const touches = e.touches;
+    const now = Date.now();
+    
+    // Guardar información del toque inicial
+    touchStartRef.current = {
+      x: touches[0].clientX,
+      y: touches[0].clientY,
+      time: now
+    };
+    
+    if (touches.length === 1) {
+      // Un solo dedo - preparar para arrastre
+      setIsDragging(true);
+      setDragStart({
+        x: touches[0].clientX - translate.x,
+        y: touches[0].clientY - translate.y
+      });
+    } else if (touches.length === 2 && zoomScale === 1) {
+      // Dos dedos - iniciar zoom pellizco
+      isZoomingRef.current = true;
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      
+      const distance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      
+      setLastTouchDistance(distance);
+      setLastScale(zoomScale);
+      
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    const touches = e.touches;
+    
+    if (touches.length === 1 && isDragging && zoomScale > 1) {
+      // Arrastrar imagen con zoom
+      const touch = touches[0];
+      const newX = touch.clientX - dragStart.x;
+      const newY = touch.clientY - dragStart.y;
+      
+      // Calcular límites de movimiento
+      if (imageRef.current && containerRef.current) {
+        const imgRect = imageRef.current.getBoundingClientRect();
+        const containerRect = containerRef.current.getBoundingClientRect();
+        
+        const maxX = Math.max(0, (imgRect.width * zoomScale - containerRect.width) / 2);
+        const maxY = Math.max(0, (imgRect.height * zoomScale - containerRect.height) / 2);
+        
+        setTranslate({
+          x: Math.max(-maxX, Math.min(maxX, newX)),
+          y: Math.max(-maxY, Math.min(maxY, newY))
+        });
+      }
+      
+      e.preventDefault();
+    } else if (touches.length === 2 && isZoomingRef.current) {
+      // Zoom pellizco
+      const touch1 = touches[0];
+      const touch2 = touches[1];
+      
+      const currentDistance = Math.sqrt(
+        Math.pow(touch2.clientX - touch1.clientX, 2) +
+        Math.pow(touch2.clientY - touch1.clientY, 2)
+      );
+      
+      if (lastTouchDistance > 0) {
+        const scaleChange = currentDistance / lastTouchDistance;
+        const newScale = Math.max(1, Math.min(4, lastScale * scaleChange));
+        setZoomScale(newScale);
+        
+        // Calcular el punto central para mantener el zoom centrado
+        if (imageRef.current && containerRef.current) {
+          const centerX = (touch1.clientX + touch2.clientX) / 2;
+          const centerY = (touch1.clientY + touch2.clientY) / 2;
+          
+          const containerRect = containerRef.current.getBoundingClientRect();
+          const relativeX = (centerX - containerRect.left) / containerRect.width;
+          const relativeY = (centerY - containerRect.top) / containerRect.height;
+          
+          const scaleDiff = newScale - zoomScale;
+          const newTranslateX = translate.x - (relativeX - 0.5) * containerRect.width * scaleDiff;
+          const newTranslateY = translate.y - (relativeY - 0.5) * containerRect.height * scaleDiff;
+          
+          setTranslate({ x: newTranslateX, y: newTranslateY });
+        }
+      }
+      
+      setLastTouchDistance(currentDistance);
+      e.preventDefault();
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (!isMobile) return;
+    
+    const touches = e.changedTouches;
+    const now = Date.now();
+    const touchDuration = now - touchStartRef.current.time;
+    
+    // Si fue un toque rápido (menos de 300ms) y no hay zoom
+    if (touches.length === 1 && touchDuration < 300 && !isZoomingRef.current) {
+      const touch = touches[0];
+      const deltaX = Math.abs(touch.clientX - touchStartRef.current.x);
+      const deltaY = Math.abs(touch.clientY - touchStartRef.current.y);
+      
+      // Si el movimiento fue mínimo, es un toque, no un arrastre
+      if (deltaX < 10 && deltaY < 10) {
+        // Toque en el lado izquierdo (20%) - imagen anterior
+        if (touch.clientX < window.innerWidth * 0.2) {
+          goToPrevious();
+        }
+        // Toque en el lado derecho (20%) - siguiente imagen
+        else if (touch.clientX > window.innerWidth * 0.8) {
+          goToNext();
+        }
+        // Toque en el centro - NO hace nada (solo se cierra con la X)
+      }
+    }
+    
+    setIsDragging(false);
+    isZoomingRef.current = false;
+    setLastTouchDistance(0);
+  };
+
+  // ==================== MANEJO PARA DESKTOP ====================
+  
+  const handleWheel = (e: React.WheelEvent) => {
+    if (isMobile) return;
+    
     e.preventDefault();
     e.stopPropagation();
     
     const delta = e.deltaY > 0 ? -0.2 : 0.2;
-    const newScale = Math.max(1, Math.min(3, modalZoom.scale + delta));
+    const newScale = Math.max(1, Math.min(4, zoomScale + delta));
+    setZoomScale(newScale);
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile || zoomScale === 1) return;
     
-    setModalZoom(prev => ({
-      ...prev,
-      scale: newScale
-    }));
-  };
-
-  const handleModalMouseDown = (e: React.MouseEvent) => {
-    if (modalZoom.scale > 1) {
+    // Solo arrastrar si no es un click simple (para evitar confusión con doble click)
+    if (e.button === 0) { // Botón izquierdo
       setIsDragging(true);
-      setStartX(e.clientX - modalZoom.x);
-      setStartY(e.clientY - modalZoom.y);
+      setDragStart({
+        x: e.clientX - translate.x,
+        y: e.clientY - translate.y
+      });
       e.preventDefault();
     }
   };
 
-  const handleModalMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && modalZoom.scale > 1) {
-      setModalZoom(prev => ({
-        ...prev,
-        x: e.clientX - startX,
-        y: e.clientY - startY
-      }));
-      e.preventDefault();
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (isMobile || !isDragging || zoomScale === 1) return;
+    
+    const newX = e.clientX - dragStart.x;
+    const newY = e.clientY - dragStart.y;
+    
+    // Calcular límites de movimiento
+    if (imageRef.current && containerRef.current) {
+      const imgRect = imageRef.current.getBoundingClientRect();
+      const containerRect = containerRef.current.getBoundingClientRect();
+      
+      const maxX = Math.max(0, (imgRect.width * zoomScale - containerRect.width) / 2);
+      const maxY = Math.max(0, (imgRect.height * zoomScale - containerRect.height) / 2);
+      
+      setTranslate({
+        x: Math.max(-maxX, Math.min(maxX, newX)),
+        y: Math.max(-maxY, Math.min(maxY, newY))
+      });
     }
   };
 
-  const handleModalMouseUp = () => {
+  const handleMouseUp = () => {
     setIsDragging(false);
-  };
-
-  const resetModalZoom = () => {
-    setModalZoom({ scale: 1, x: 0, y: 0 });
   };
 
   return (
     <div 
-      className="fixed inset-0 z-50 bg-black/95 flex items-center justify-center p-4 select-none"
-      onClick={onClose}
+      ref={modalRef}
+      className="fixed inset-0 z-50 bg-black flex items-center justify-center select-none overflow-hidden"
+      onClick={(e) => {
+        // Solo cerrar si se hace click en el fondo oscuro (fuera del contenido)
+        if (e.target === modalRef.current) {
+          onClose();
+        }
+      }}
     >
-      <div 
-        className="relative max-w-6xl w-full max-h-[90vh]"
-        onClick={(e) => e.stopPropagation()}
-      >
+      <div className="relative w-full h-full flex flex-col">
         {/* Cabecera */}
         <div className="absolute top-0 left-0 right-0 z-50 flex justify-between items-center p-4 bg-gradient-to-b from-black/80 to-transparent">
           <div className="text-white text-sm flex items-center gap-2">
-            {modalZoom.scale > 1 ? (
+            {zoomScale > 1 ? (
               <>
-                <Move size={16} />
-                <span>Arrastra para mover • Rueda para zoom</span>
+                {isMobile ? (
+                  <>
+                    <Move size={16} />
+                    <span>Pellizca para ajustar zoom • Desliza para mover</span>
+                  </>
+                ) : (
+                  <>
+                    <Move size={16} />
+                    <span>Doble click para quitar zoom • Arrastra para mover</span>
+                  </>
+                )}
               </>
             ) : (
               <>
-                <ZoomIn size={16} />
-                <span>Rueda para zoom • Click fuera para cerrar</span>
+                {isMobile ? (
+                  <span>Pellizca para zoom • Toca lados para navegar</span>
+                ) : (
+                  <span>• Mueve la Rueda del mouse para ajustar</span>
+                )}
               </>
             )}
           </div>
@@ -1100,79 +1250,144 @@ const ModalGaleria = ({ producto, imagenPrincipal, setImagenPrincipal, onClose }
           </button>
         </div>
         
-        {/* Imagen */}
-        <div className="h-full flex items-center justify-center p-8">
+        {/* Contenedor principal */}
+        <div 
+          ref={containerRef}
+          className="flex-1 flex items-center justify-center p-4 relative"
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
+          onTouchCancel={handleTouchEnd}
+          onWheel={handleWheel}
+          onMouseDown={handleMouseDown}
+          onMouseMove={handleMouseMove}
+          onMouseUp={handleMouseUp}
+          onMouseLeave={handleMouseUp}
+        >
+          {/* Imagen principal - CONTAINER CON TAMAÑO CONTROLADO */}
           <div 
-            className="relative overflow-hidden rounded-lg cursor-grab active:cursor-grabbing"
-            onWheel={handleModalWheel}
-            onMouseDown={handleModalMouseDown}
-            onMouseMove={handleModalMouseMove}
-            onMouseUp={handleModalMouseUp}
-            onMouseLeave={handleModalMouseUp}
-            style={{ 
-              width: '100%', 
-              height: '100%',
-              maxWidth: '800px',
-              maxHeight: '600px'
-            }}
+            className={`relative ${isMobile ? 'w-full h-full' : 'max-w-3xl max-h-[70vh] w-full h-full flex items-center justify-center'}`}
+            onDoubleClick={handleDoubleClick}
           >
-            <img
-              src={imagenPrincipal || producto.imagen}
-              alt={producto.nombre}
-              className="w-full h-full object-contain pointer-events-none"
-              style={{
-                transform: `translate(${modalZoom.x}px, ${modalZoom.y}px) scale(${modalZoom.scale})`,
-                transition: isDragging ? 'none' : 'transform 0.2s ease'
-              }}
-              draggable="false"
-            />
-            
-            {/* Controles de zoom */}
-            {modalZoom.scale > 1 && (
-              <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                <button
-                  onClick={resetModalZoom}
-                  className="bg-black/70 hover:bg-black/90 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm"
-                >
-                  <ZoomOut size={16} />
-                  <span>Reiniciar ({modalZoom.scale.toFixed(1)}x)</span>
-                </button>
-              </div>
-            )}
+            <div className={`relative ${isMobile ? 'w-full h-full' : 'max-w-full max-h-full w-full h-full flex items-center justify-center'}`}>
+              <img
+                ref={imageRef}
+                src={currentImage}
+                alt={`Imagen ${currentSlideIndex + 1}`}
+                className={`${isMobile ? 'w-full h-full' : 'max-w-full max-h-full'} object-contain transition-transform duration-200 ease-out`}
+                style={{
+                  transform: `translate(${translate.x}px, ${translate.y}px) scale(${zoomScale})`,
+                  cursor: zoomScale > 1 ? 'grab' : 'default'
+                }}
+                draggable="false"
+              />
+              
+              {/* Flechas de navegación (solo cuando no hay zoom) */}
+              {zoomScale === 1 && (
+                <>
+                  <button
+                    onClick={goToPrevious}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors z-10"
+                  >
+                    <ChevronLeft size={24} />
+                  </button>
+                  <button
+                    onClick={goToNext}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-3 rounded-full transition-colors z-10"
+                  >
+                    <ChevronRight size={24} />
+                  </button>
+                </>
+              )}
+              
+              {/* Indicador de zoom */}
+              {zoomScale > 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
+                  <button
+                    onClick={resetZoom}
+                    className="bg-black/70 hover:bg-black/90 text-white px-4 py-2 rounded-full flex items-center gap-2 transition-colors text-sm backdrop-blur-sm"
+                  >
+                    <ZoomOut size={16} />
+                    <span>Quitar zoom ({zoomScale.toFixed(1)}x)</span>
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
         
-        {/* Miniaturas */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 overflow-x-auto py-2">
-          <button
-            onClick={() => setImagenPrincipal(producto.imagen)}
-            className={`w-12 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
-              imagenPrincipal === producto.imagen ? 'border-white' : 'border-transparent hover:border-white/50'
-            }`}
-          >
-            <img 
-              src={producto.imagen} 
-              alt="Principal" 
-              className="w-full h-full object-cover"
+        {/* Zonas táctiles para navegación en móvil (solo sin zoom) */}
+        {isMobile && zoomScale === 1 && (
+          <>
+            {/* Zona izquierda para navegar anterior */}
+            <div 
+              className="absolute left-0 top-0 bottom-0 w-1/4 z-20"
+              onClick={goToPrevious}
+              style={{ cursor: 'pointer' }}
             />
-          </button>
-          
-          {producto.galeria.map((img, idx) => (
-            <button
-              key={idx}
-              onClick={() => setImagenPrincipal(img.imagen_galeria)}
-              className={`w-12 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
-                imagenPrincipal === img.imagen_galeria ? 'border-white' : 'border-transparent hover:border-white/50'
-              }`}
-            >
-              <img 
-                src={img.imagen_galeria} 
-                alt={`Galería ${idx + 1}`} 
-                className="w-full h-full object-cover"
-              />
-            </button>
-          ))}
-        </div>
+            {/* Zona derecha para navegar siguiente */}
+            <div 
+              className="absolute right-0 top-0 bottom-0 w-1/4 z-20"
+              onClick={goToNext}
+              style={{ cursor: 'pointer' }}
+            />
+          </>
+        )}
+        
+        {/* Indicadores (solo móvil y sin zoom) */}
+        {isMobile && zoomScale === 1 && (
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center items-center gap-4">
+            {/* Indicador de imágenes */}
+            <div className="bg-black/50 text-white px-3 py-1 rounded-full text-sm">
+              {currentSlideIndex + 1} / {allImages.length}
+            </div>
+            
+            {/* Puntos indicadores */}
+            <div className="flex gap-2">
+              {allImages.map((_, idx) => (
+                <div
+                  key={idx}
+                  className={`w-2 h-2 rounded-full transition-colors ${
+                    idx === currentSlideIndex ? 'bg-white' : 'bg-white/40'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* Miniaturas (solo desktop) */}
+        {!isMobile && (
+          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 px-4 overflow-x-auto py-2">
+            {allImages.map((img, idx) => (
+              <button
+                key={idx}
+                onClick={() => {
+                  setCurrentSlideIndex(idx);
+                  resetZoom();
+                }}
+                className={`w-12 h-12 flex-shrink-0 rounded overflow-hidden border-2 transition-all ${
+                  idx === currentSlideIndex ? 'border-white' : 'border-transparent hover:border-white/50'
+                }`}
+              >
+                <img 
+                  src={img} 
+                  alt={`Miniatura ${idx + 1}`} 
+                  className="w-full h-full object-cover"
+                />
+              </button>
+            ))}
+          </div>
+        )}
+        
+        {/* Instrucciones para móvil */}
+        {isMobile && zoomScale === 1 && (
+          <div className="absolute top-20 left-0 right-0 flex justify-center">
+            <div className="bg-black/60 text-white/90 text-xs px-3 py-2 rounded-full">
+              Toca los lados para navegar • Pellizca para zoom
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
