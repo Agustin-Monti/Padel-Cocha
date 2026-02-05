@@ -27,7 +27,7 @@ export default function FormularioPaleta({ product, onChange }: Props) {
         <Input name="balance" value={product.balance || ""} onChange={onChange} required />
       </div>
       <div>
-        <Label>Marco</Label>
+        <Label>Material Externo</Label>
         <Input name="marco" value={product.marco || ""} onChange={onChange} required />
       </div>
       <div>
@@ -53,4 +53,5 @@ export default function FormularioPaleta({ product, onChange }: Props) {
     </div>
   );
 }
+
 
