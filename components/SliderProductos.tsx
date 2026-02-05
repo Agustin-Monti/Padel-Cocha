@@ -3,8 +3,9 @@
 import Slider from 'react-slick';
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useState } from 'react';
 
 interface Producto {
   id: number;
@@ -39,10 +40,21 @@ function CustomNextArrow(props: any) {
   );
 }
 
-
-
-
 export default function SliderProductos({ productos }: { productos: Producto[] }) {
+
+  const router = useRouter();
+  const [isNavigating, setIsNavigating] = useState(false);
+
+  const handleProductClick = (productId: number) => {
+    if (isNavigating) return;
+    
+    setIsNavigating(true);
+    router.push(`/products/${productId}`);
+    
+    // Resetear el estado después de un tiempo
+    setTimeout(() => setIsNavigating(false), 500);
+  };
+
   const settings = {
     dots: false,
     infinite: true,
@@ -57,6 +69,11 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
       { breakpoint: 1024, settings: { slidesToShow: 2 } },
       { breakpoint: 640, settings: { slidesToShow: 1 } },
     ],
+    // Añadir esta configuración para mejorar la interacción
+    swipe: true,
+    touchMove: true,
+    swipeToSlide: true,
+    pauseOnHover: true,
   };
 
   return (
@@ -86,7 +103,10 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
           const precioEfectivo = producto.precio * 0.85;
 
           return (
-            <div key={producto.id} className="px-3">
+            <div 
+              key={producto.id} 
+              className="px-3 cursor-pointer"
+              onClick={() => handleProductClick(Number(producto.id))}>
               <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-6 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto">
                 <div className="relative">
                   {mostrarOferta && (
@@ -94,20 +114,19 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
                       - {porcentajeDescuento}%
                     </div>
                   )}
-                  <Link href={`/products/${producto.id}`} prefetch={false}>
-                    <img
-                      src={producto.imagen}
-                      alt={producto.nombre}
-                      className="w-full h-[300px] object-contain rounded-2xl mb-4 hover:scale-105 transition-transform duration-300"
-                    />
-                  </Link>
+                  <img
+                    src={producto.imagen}
+                    alt={producto.nombre}
+                    className="w-full h-[300px] object-contain rounded-2xl mb-4 hover:scale-105 transition-transform duration-300"
+                  />
                 </div>
 
-                <Link href={`/products/${producto.id}`} prefetch={false}>
-                  <h3 className="font-bebas text-2xl tracking-wide text-[#4a3c2f] h-[60px] overflow-hidden truncate ">
+                {/* Reemplazamos Link con div */}
+                <div className="min-h-[60px]">
+                  <h3 className="font-bebas text-2xl tracking-wide text-[#4a3c2f] h-[60px] overflow-hidden truncate">
                     {producto.nombre}
                   </h3>
-                </Link>
+                </div>
 
                 {/* Separador decorativo */}
                 <div className="w-12 h-[2px] bg-[#816b4b] mx-auto my-2 rounded-full" />
@@ -148,4 +167,3 @@ export default function SliderProductos({ productos }: { productos: Producto[] }
     </div>
   );
 }
-
