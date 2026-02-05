@@ -90,26 +90,23 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
 
   const { esFavorito, verificarFavorito, addFavorito, removeFavorito } = useFavoritos();
 
-  // ==================== FUNCIONES PARA BLOQUEAR/DESBLOQUEAR SCROLL ====================
-  
+  // ==================== FUNCIONES MEJORADAS PARA BLOQUEAR/DESBLOQUEAR SCROLL ====================
   const lockScroll = useCallback(() => {
-    scrollYRef.current = window.scrollY;
+    if (document.body.style.position === 'fixed') return;
     
+    scrollYRef.current = window.scrollY;
     document.body.style.position = 'fixed';
     document.body.style.top = `-${scrollYRef.current}px`;
     document.body.style.left = '0';
     document.body.style.right = '0';
     document.body.style.overflow = 'hidden';
     document.body.style.width = '100%';
-    document.body.style.height = '100%';
-    
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    if (scrollbarWidth > 0) {
-      document.body.style.paddingRight = `${scrollbarWidth}px`;
-    }
+    document.body.style.height = '100vh';
   }, []);
 
   const unlockScroll = useCallback(() => {
+    if (document.body.style.position !== 'fixed') return;
+    
     document.body.style.position = '';
     document.body.style.top = '';
     document.body.style.left = '';
@@ -127,23 +124,39 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
     }
   }, []);
 
-  // ==================== EFECTOS PARA CONTROLAR EL SCROLL ====================
-  
+  // ==================== EFECTOS SIMPLIFICADOS ====================
   useEffect(() => {
-    if (isZoomed || showModalGaleria) {
+    // Solo bloquear scroll para el modal de galería COMPLETA
+    if (showModalGaleria) {
       lockScroll();
-    } else {
-      const timer = setTimeout(() => {
-        unlockScroll();
-      }, 0);
-      
-      return () => clearTimeout(timer);
     }
 
     return () => {
-      unlockScroll();
+      // Solo desbloquear si estamos saliendo del modal de galería
+      if (showModalGaleria) {
+        unlockScroll();
+      }
     };
-  }, [isZoomed, showModalGaleria, lockScroll, unlockScroll]);
+  }, [showModalGaleria, lockScroll, unlockScroll]);
+
+  // Para el zoom en desktop, usa un efecto separado
+  useEffect(() => {
+    if (isZoomed && window.innerWidth >= 1024) {
+      // Para zoom en desktop, solo prevenir el scroll de página
+      const preventPageScroll = (e: WheelEvent) => {
+        // Solo prevenir si el evento ocurre en el contenedor de zoom
+        if (zoomContainerRef.current?.contains(e.target as Node)) {
+          e.preventDefault();
+        }
+      };
+
+      document.addEventListener('wheel', preventPageScroll, { passive: false });
+      
+      return () => {
+        document.removeEventListener('wheel', preventPageScroll);
+      };
+    }
+  }, [isZoomed]);
 
   // ==================== ZOOM EN DESKTOP ====================
   
@@ -174,11 +187,32 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       
       if (newZoomState) {
         setZoomLevel(2);
+        // NO bloquees el scroll aquí, solo lo manejaremos con el event listener
       } else {
         setImagePosition({ x: 0, y: 0 });
+        // NO necesitas restaurar nada aquí
       }
     }
   };
+
+  // Añade este useEffect para manejar el zoom sin bloquear el scroll:
+  useEffect(() => {
+    const handleWheel = (e: WheelEvent) => {
+      // Solo prevenir el scroll de la página si estamos haciendo zoom
+      if (isZoomed && zoomContainerRef.current?.contains(e.target as Node)) {
+        e.preventDefault();
+      }
+    };
+
+    // Solo agregar el event listener si hay zoom activo
+    if (isZoomed) {
+      document.addEventListener('wheel', handleWheel, { passive: false });
+    }
+
+    return () => {
+      document.removeEventListener('wheel', handleWheel);
+    };
+  }, [isZoomed]);
 
   const handleDesktopWheel = (e: React.WheelEvent) => {
     if (window.innerWidth >= 1024 && isZoomed) {
@@ -358,6 +392,14 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
       </div>
     );
   };
+
+  useEffect(() => {
+    return () => {
+      // Limpiar todo al desmontar el componente
+      unlockScroll();
+      document.body.style.overflow = '';
+    };
+  }, [unlockScroll]);
 
   return (
     <div className="bg-gray-100 min-h-screen">
@@ -1392,4 +1434,3 @@ const ModalGaleriaMejorado = ({
     </div>
   );
 };
-
