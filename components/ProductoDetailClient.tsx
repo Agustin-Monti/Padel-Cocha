@@ -750,7 +750,7 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
             {categoriaNombre === "Paletas" && (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-6">
                 {producto.modelo && <CardEspecificacion label="Modelo" value={producto.modelo} />}
-                {producto.marco && <CardEspecificacion label="Marco" value={producto.marco} />}
+                {producto.marco && <CardEspecificacion label="Material Externo" value={producto.marco} />}
                 {producto.origen && <CardEspecificacion label="Origen" value={producto.origen} />}
                 {producto.forma && <CardEspecificacion label="Forma" value={producto.forma} />}
                 {producto.balance && <CardEspecificacion label="Balance" value={producto.balance} />}
@@ -1392,3 +1392,4 @@ const ModalGaleriaMejorado = ({
     </div>
   );
 };
+
