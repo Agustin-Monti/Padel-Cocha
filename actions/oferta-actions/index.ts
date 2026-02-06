@@ -61,8 +61,16 @@ export const getProductosEnOferta = async () => {
 
   const { data, error } = await supabase
     .from("productos")
-    .select("*")
-    .eq("oferta_activa", true);
+    .select(`
+      *,
+      marcas (
+        id,
+        nombre,
+        imagen
+      )
+    `)
+    .eq("oferta_activa", true)
+    .order('created_at', { ascending: false }); // Opcional: ordenar por fecha
 
   if (error) {
     console.error("Error al obtener productos en oferta:", error.message);
@@ -86,4 +94,5 @@ export const getTiposDeProductos = async () => {
   }
 
   return data || [];
+
 };
