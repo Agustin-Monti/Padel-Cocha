@@ -710,8 +710,8 @@ export default function ProductoDetailClient({ producto, relacionados }: Props) 
                 </button>
                 {openDevolucion && (
                   <div className="pb-4 text-gray-700 space-y-2 text-sm">
-                    <p><span className="font-medium">Peso:</span> {producto.peso} kg</p>
-                    <p><span className="font-medium">Descripción:</span> {producto.descripcion}</p>
+                    <p><span className="font-medium font-semibold">Peso:</span> {producto.peso} kg</p>
+                    <p><span className="font-medium font-semibold">Descripción:</span> {producto.descripcion}</p>
                   </div>
                 )}
               </div>
@@ -1434,3 +1434,4 @@ const ModalGaleriaMejorado = ({
     </div>
   );
 };
+
