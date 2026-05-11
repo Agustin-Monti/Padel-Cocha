@@ -16,7 +16,7 @@ type Producto = {
   estado: string;
   oferta_activa?: boolean;
   precio_oferta: number;
-  marcas?: { id: string; nombre: string }; // Agregado
+  marcas?: { id: string; nombre: string };
 };
 
 export default function ProductosCategoryMarca() {
@@ -33,7 +33,38 @@ export default function ProductosCategoryMarca() {
   const [filtroEstadoSeleccionado, setFiltroEstadoSeleccionado] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [nombreMarca, setNombreMarca] = useState<string>("");
-  const [cargando, setCargando] = useState(true); // Agregado para loading state
+  const [cargando, setCargando] = useState(true);
+
+  // Estados de paginación
+  const [currentPage, setCurrentPage] = useState(1);
+  const [productsPerPage, setProductsPerPage] = useState(8);
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1024);
+
+  // Detectar tamaño de pantalla para ajustar productos por página
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      setWindowWidth(width);
+      
+      // Ajustar productos por página según tamaño de pantalla
+      if (width < 640) { // mobile
+        setProductsPerPage(4);
+      } else if (width < 1024) { // tablet
+        setProductsPerPage(6);
+      } else { // desktop
+        setProductsPerPage(8);
+      }
+    };
+
+    handleResize(); // Llamada inicial
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // Resetear página cuando cambian los filtros
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroFormatoSeleccionado, filtroEstadoSeleccionado, precioMinimo, precioMaximo]);
 
   useEffect(() => {
     console.log("useEffect ejecutado con categoriaId:", categoriaId, "marcaId:", marcaId);
@@ -76,7 +107,8 @@ export default function ProductosCategoryMarca() {
     };
 
     cargarDatos();
-  }, [categoriaId, marcaId])
+  }, [categoriaId, marcaId]);
+
   // Función para normalizar texto (eliminar espacios, minúsculas, etc.)
   const normalizarTexto = (texto: string): string => {
     return texto
@@ -145,6 +177,19 @@ export default function ProductosCategoryMarca() {
     
     return dentroRango && cumpleFormato && cumpleEstado;
   });
+
+  // Lógica de paginación
+  const totalPages = Math.ceil(productosFiltrados.length / productsPerPage);
+  const indexOfLastProduct = currentPage * productsPerPage;
+  const indexOfFirstProduct = indexOfLastProduct - productsPerPage;
+  const currentProducts = productosFiltrados.slice(indexOfFirstProduct, indexOfLastProduct);
+
+  // Función para cambiar de página
+  const handlePageChange = (pageNumber: number) => {
+    setCurrentPage(pageNumber);
+    // Scroll suave hacia arriba
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   // Formatear el formato para mostrar (primera letra mayúscula)
   const formatearTexto = (texto: string): string => {
@@ -331,6 +376,15 @@ export default function ProductosCategoryMarca() {
     </div>
   );
 
+  // Mostrar loading mientras se cargan los datos
+  if (cargando) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col lg:flex-row p-6 gap-6 items-start">
       {/* Título de marca en móvil */}
@@ -340,7 +394,7 @@ export default function ProductosCategoryMarca() {
             Marca: <span className="font-extrabold">{nombreMarca}</span>
           </h1>
           <p className="text-blue-600 mt-1">
-            Mostrando {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} de {nombreMarca}
+            Mostrando {currentProducts.length} de {productosFiltrados.length} producto{productosFiltrados.length !== 1 ? 's' : ''} de {nombreMarca}
           </p>
         </div>
       </div>
@@ -377,118 +431,243 @@ export default function ProductosCategoryMarca() {
         </div>
       )}
 
-      {/* Lista de productos */}
-      <section
-        className="w-full lg:w-3/4 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 pb-8"
-        style={{ backgroundColor: '#e6dfd6' }}
-      >
-        {productosFiltrados.length > 0 ? (
-          productosFiltrados.map((producto) => {
-            const mostrarOferta = producto.oferta_activa && producto.precio_oferta;
-            const porcentajeDescuento = mostrarOferta
-              ? Math.round(100 - (producto.precio_oferta * 100) / producto.precio)
-              : 0;
+      {/* CONTENEDOR PRINCIPAL: Productos + Paginación */}
+      <div className="w-full lg:w-3/4">
+        {/* Lista de productos */}
+        <section
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 px-2 pb-8"
+          style={{ backgroundColor: '#e6dfd6' }}
+        >
+          {currentProducts.length > 0 ? (
+            currentProducts.map((producto) => {
+              const mostrarOferta = producto.oferta_activa && producto.precio_oferta;
+              const porcentajeDescuento = mostrarOferta
+                ? Math.round(100 - (producto.precio_oferta * 100) / producto.precio)
+                : 0;
 
-            return (
-              <div key={producto.id}>
-                <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-4 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto flex flex-col gap-y-2">
-                  
-                  {/* Imagen con etiqueta de oferta */}
-                  <div className="relative">
-                    {mostrarOferta && (
-                      <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
-                        -{porcentajeDescuento}%
-                      </div>
-                    )}
+              return (
+                <div key={producto.id}>
+                  <div className="bg-[#f9f5f0] border border-[#e2dcd4] text-center rounded-3xl p-4 shadow-md hover:shadow-xl transition-all duration-300 h-full max-w-[340px] mx-auto flex flex-col gap-y-2">
                     
-                    {/* Etiqueta de estado si existe */}
-                    {producto.estado && (
-                      <div className="absolute top-2 right-2 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
-                        {formatearTexto(producto.estado)}
-                      </div>
-                    )}
-                    
-                    <Link href={`/products/${producto.id}`} prefetch={false}>
-                      <div className="w-full h-[300px] flex items-center justify-center">
-                        <img
-                          src={producto.imagen}
-                          alt={producto.nombre}
-                          className="max-w-full max-h-full object-contain rounded-2xl transition-transform duration-300 hover:scale-105"
-                        />
-                      </div>
-                    </Link>
-                  </div>
-
-                  {/* Nombre truncado */}
-                  <Link href={`/products/${producto.id}`} prefetch={false}>
-                    <h3 className="font-amatic text-2xl tracking-wide text-[#4a3c2f] line-clamp-2 px-2 truncate">
-                      {producto.nombre}
-                    </h3>
-                  </Link>
-
-                  {/* Separador decorativo */}
-                  <div className="w-10 h-[2px] bg-[#816b4b] mx-auto rounded-full" />
-
-                  {/* Precio u oferta */}
-                  {mostrarOferta ? (
-                    <div className="flex justify-center items-center gap-2">
-                      <span className="line-through text-gray-500 text-sm">
-                        ${producto.precio.toLocaleString('es-ES')}
-                      </span>
-                      <span className="text-xl font-bold text-[#4a3c2f]">
-                        ${producto.precio_oferta.toLocaleString('es-ES')}
-                      </span>
+                    {/* Imagen con etiqueta de oferta */}
+                    <div className="relative">
+                      {mostrarOferta && (
+                        <div className="absolute top-2 left-2 bg-red-500 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
+                          -{porcentajeDescuento}%
+                        </div>
+                      )}
+                      
+                      {/* Etiqueta de estado si existe */}
+                      {producto.estado && (
+                        <div className="absolute top-2 right-2 bg-gray-700 text-white text-xs font-semibold px-2 py-1 rounded shadow-md z-10">
+                          {formatearTexto(producto.estado)}
+                        </div>
+                      )}
+                      
+                      <Link href={`/products/${producto.id}`} prefetch={false}>
+                        <div className="w-full h-[300px] flex items-center justify-center">
+                          <img
+                            src={producto.imagen}
+                            alt={producto.nombre}
+                            className="max-w-full max-h-full object-contain rounded-2xl transition-transform duration-300 hover:scale-105"
+                          />
+                        </div>
+                      </Link>
                     </div>
-                  ) : (
-                    <p className="text-xl font-semibold text-[#4a3c2f]">
-                      ${producto.precio.toLocaleString('es-ES')}
-                    </p>
-                  )}
 
-                  {/* Precio con transferencia (si no hay oferta) */}
-                  {!mostrarOferta ? (
-                    <p className="text-sm font-medium text-green-700">
-                      ${(producto.precio * 0.95).toLocaleString('es-ES', { minimumFractionDigits: 2 })} con transferencia
-                    </p>
-                  ): (
-                    <p className="text-sm font-medium text-green-700">
-                      Oferta Activa
-                    </p>
-                  )}
+                    {/* Nombre truncado */}
+                    <Link href={`/products/${producto.id}`} prefetch={false}>
+                      <h3 className="font-amatic text-2xl tracking-wide text-[#4a3c2f] line-clamp-2 px-2 truncate">
+                        {producto.nombre}
+                      </h3>
+                    </Link>
+
+                    {/* Separador decorativo */}
+                    <div className="w-10 h-[2px] bg-[#816b4b] mx-auto rounded-full" />
+
+                    {/* Precio u oferta */}
+                    {mostrarOferta ? (
+                      <div className="flex justify-center items-center gap-2">
+                        <span className="line-through text-gray-500 text-sm">
+                          ${producto.precio.toLocaleString('es-ES')}
+                        </span>
+                        <span className="text-xl font-bold text-[#4a3c2f]">
+                          ${producto.precio_oferta.toLocaleString('es-ES')}
+                        </span>
+                      </div>
+                    ) : (
+                      <p className="text-xl font-semibold text-[#4a3c2f]">
+                        ${producto.precio.toLocaleString('es-ES')}
+                      </p>
+                    )}
+
+                    {/* Precio con transferencia (si no hay oferta) */}
+                    {!mostrarOferta ? (
+                      <p className="text-sm font-medium text-green-700">
+                        ${(producto.precio * 0.95).toLocaleString('es-ES', { minimumFractionDigits: 2 })} con transferencia
+                      </p>
+                    ): (
+                      <p className="text-sm font-medium text-green-700">
+                        Oferta Activa
+                      </p>
+                    )}
+                  </div>
                 </div>
+              );
+            })
+          ) : (
+            <div className="w-full col-span-full flex justify-center items-center text-center py-20">
+              <div className="bg-white p-8 rounded-xl shadow-md max-w-md">
+                <h3 className="text-xl font-semibold text-gray-700 mb-3">
+                  No hay productos de {nombreMarca} disponibles
+                </h3>
+                <p className="text-gray-500 mb-4">
+                  No encontramos productos de {nombreMarca} con los filtros aplicados.
+                </p>
+                <button
+                  onClick={() => {
+                    setFiltroFormatoSeleccionado(null);
+                    setFiltroEstadoSeleccionado(null);
+                    setPrecioMinimo(0);
+                    setPrecioMaximo(1000000);
+                  }}
+                  className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2 mb-2"
+                >
+                  Reiniciar filtros
+                </button>
+                <Link 
+                  href={`/products-category/${categoriaId}`}
+                  className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-all"
+                >
+                  Ver todos los productos
+                </Link>
               </div>
-            );
-          })
-        ) : (
-          <div className="w-full col-span-4 flex justify-center items-center text-center py-20">
-            <div className="bg-white p-8 rounded-xl shadow-md max-w-md">
-              <h3 className="text-xl font-semibold text-gray-700 mb-3">
-                No hay productos de {nombreMarca} disponibles
-              </h3>
-              <p className="text-gray-500 mb-4">
-                No encontramos productos de {nombreMarca} con los filtros aplicados.
-              </p>
-              <button
-                onClick={() => {
-                  setFiltroFormatoSeleccionado(null);
-                  setFiltroEstadoSeleccionado(null);
-                  setPrecioMinimo(0);
-                  setPrecioMaximo(1000000);
-                }}
-                className="inline-block bg-[#816b4b] text-white px-4 py-2 rounded hover:bg-[#6b563c] transition-all mr-2 mb-2"
-              >
-                Reiniciar filtros
-              </button>
-              <Link 
-                href={`/products-category/${categoriaId}`}
-                className="inline-block bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition-all"
-              >
-                Ver todos los productos
-              </Link>
             </div>
-          </div>
+          )}
+        </section>
+
+        {/* Paginación */}
+        {productosFiltrados.length > productsPerPage && (
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            windowWidth={windowWidth}
+          />
         )}
-      </section>
+      </div>
+    </div>
+  );
+}
+
+// Componente de Paginación
+function Pagination({ 
+  currentPage, 
+  totalPages, 
+  onPageChange,
+  windowWidth 
+}: { 
+  currentPage: number;
+  totalPages: number;
+  onPageChange: (page: number) => void;
+  windowWidth: number;
+}) {
+  const isMobile = windowWidth < 640;
+  const maxVisiblePages = isMobile ? 3 : 5;
+  
+  const getPageNumbers = () => {
+    const pages = [];
+    let startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
+    let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+    
+    if (endPage - startPage + 1 < maxVisiblePages) {
+      startPage = Math.max(1, endPage - maxVisiblePages + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  };
+
+  return (
+    <div className="flex justify-center items-center gap-1 mt-8 pb-6">
+      {/* Botón Anterior */}
+      <button
+        onClick={() => onPageChange(currentPage - 1)}
+        disabled={currentPage === 1}
+        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
+          ${currentPage === 1 
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+          }`}
+      >
+        {isMobile ? '←' : '← Anterior'}
+      </button>
+
+      {/* Primera página + elipsis si es necesario */}
+      {getPageNumbers()[0] > 1 && (
+        <>
+          <button
+            onClick={() => onPageChange(1)}
+            className="px-3 py-2 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+          >
+            1
+          </button>
+          {getPageNumbers()[0] > 2 && (
+            <span className="px-2 text-gray-400">...</span>
+          )}
+        </>
+      )}
+
+      {/* Páginas numeradas */}
+      {getPageNumbers().map((page) => (
+        <button
+          key={page}
+          onClick={() => onPageChange(page)}
+          className={`min-w-[40px] px-3 py-2 rounded-md text-sm font-medium transition-colors
+            ${currentPage === page
+              ? 'bg-blue-600 text-white'
+              : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+            }`}
+        >
+          {page}
+        </button>
+      ))}
+
+      {/* Última página + elipsis si es necesario */}
+      {getPageNumbers()[getPageNumbers().length - 1] < totalPages && (
+        <>
+          {getPageNumbers()[getPageNumbers().length - 1] < totalPages - 1 && (
+            <span className="px-2 text-gray-400">...</span>
+          )}
+          <button
+            onClick={() => onPageChange(totalPages)}
+            className="px-3 py-2 rounded-md text-sm font-medium bg-white text-gray-700 hover:bg-gray-50 border border-gray-300"
+          >
+            {totalPages}
+          </button>
+        </>
+      )}
+
+      {/* Botón Siguiente */}
+      <button
+        onClick={() => onPageChange(currentPage + 1)}
+        disabled={currentPage === totalPages}
+        className={`px-3 py-2 rounded-md text-sm font-medium transition-colors
+          ${currentPage === totalPages
+            ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+            : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-300'
+          }`}
+      >
+        {isMobile ? '→' : 'Siguiente →'}
+      </button>
+
+      {/* Indicador de página actual */}
+      <span className="ml-4 text-sm text-gray-600 hidden sm:inline">
+        Página {currentPage} de {totalPages}
+      </span>
     </div>
   );
 }
